@@ -33,3 +33,5 @@ Thumbs.db
 # Tooling
 .codex/
 .agents/
+
+docs/temp.md
