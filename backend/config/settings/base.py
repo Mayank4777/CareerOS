@@ -62,8 +62,10 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt",
+    "apps.common.apps.CommonConfig",
     "corsheaders",
     "apps.accounts",
+    "apps.career_profile.apps.CareerProfileConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -149,6 +151,7 @@ REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
     ],
+    "EXCEPTION_HANDLER": "apps.common.handlers.custom_exception_handler",
 }
 
 SIMPLE_JWT = {
