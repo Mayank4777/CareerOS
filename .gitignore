@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Django
+backend/.env
+backend/.env.local
+backend/logs/
+backend/media/
+backend/staticfiles/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Tooling
+.codex/
+.agents/
