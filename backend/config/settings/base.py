@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 from datetime import timedelta
+from pathlib import Path
 
 from config.env import load_environment
 from config.logging import build_logging_config
@@ -67,6 +67,10 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.career_profile.apps.CareerProfileConfig",
     "apps.experience.apps.ExperienceConfig",
+    "apps.skills.apps.SkillsConfig",
+    "apps.projects.apps.ProjectsConfig",
+    "apps.certifications.apps.CertificationsConfig",
+    "apps.languages.apps.LanguagesConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
