@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from .models import CareerProfile
+from .models import CareerProfile, Education
 
 
 class CareerProfileSerializer(serializers.ModelSerializer):
@@ -39,4 +39,37 @@ class CareerProfileSerializer(serializers.ModelSerializer):
         return value.strip()
 
     def validate_location(self, value: str) -> str:
+        return value.strip()
+
+
+class EducationSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Education
+        fields = (
+            "id",
+            "user",
+            "institution",
+            "degree",
+            "field_of_study",
+            "start_date",
+            "end_date",
+            "grade",
+        )
+        read_only_fields = ("id", "user")
+
+    def get_user(self, obj):
+        return obj.career_profile.user_id
+
+    def validate_institution(self, value: str) -> str:
+        return value.strip()
+
+    def validate_degree(self, value: str) -> str:
+        return value.strip()
+
+    def validate_field_of_study(self, value: str) -> str:
+        return value.strip()
+
+    def validate_grade(self, value: str) -> str:
         return value.strip()
