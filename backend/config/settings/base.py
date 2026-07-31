@@ -71,6 +71,13 @@ INSTALLED_APPS = [
     "apps.projects.apps.ProjectsConfig",
     "apps.certifications.apps.CertificationsConfig",
     "apps.languages.apps.LanguagesConfig",
+    "apps.achievements.apps.AchievementsConfig",
+    "apps.awards.apps.AwardsConfig",
+    "apps.volunteer_experience.apps.VolunteerExperienceConfig",
+    "apps.publications.apps.PublicationsConfig",
+    "apps.interests.apps.InterestsConfig",
+    "apps.references.apps.ReferencesConfig",
+    "apps.custom_sections.apps.CustomSectionsConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
