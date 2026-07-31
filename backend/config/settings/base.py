@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "apps.accounts",
     "apps.career_profile.apps.CareerProfileConfig",
+    "apps.experience.apps.ExperienceConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
