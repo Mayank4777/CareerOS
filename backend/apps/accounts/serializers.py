@@ -61,6 +61,10 @@ class LoginSerializer(serializers.Serializer):
         return value.strip().lower()
 
 
+class RefreshTokenSerializer(serializers.Serializer):
+    refresh = serializers.CharField(write_only=True, trim_whitespace=False)
+
+
 class RegisteredUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

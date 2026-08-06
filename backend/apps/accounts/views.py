@@ -5,10 +5,16 @@ from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 
 from apps.common.responses import created_response, error_response, success_response
 
-from .serializers import LoginSerializer, RegisterSerializer, RegisteredUserSerializer
+from .serializers import (
+    LoginSerializer,
+    RefreshTokenSerializer,
+    RegisterSerializer,
+    RegisteredUserSerializer,
+)
 from .services import AuthenticationService, EmailAlreadyExistsError, InvalidCredentialsError
 
 
@@ -70,6 +76,36 @@ class LoginAPIView(APIView):
                 "access": str(refresh.access_token),
                 "refresh": str(refresh),
                 "user": RegisteredUserSerializer(user).data,
+            },
+        )
+
+
+class RefreshTokenAPIView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes: list = []
+
+    def post(self, request, *args, **kwargs):
+        serializer = RefreshTokenSerializer(data=request.data)
+        if not serializer.is_valid():
+            return error_response(
+                message="Validation failed.",
+                errors=serializer.errors,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            refresh = RefreshToken(serializer.validated_data["refresh"])
+        except TokenError:
+            return error_response(
+                message="Invalid refresh token.",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        return success_response(
+            message="Token refreshed successfully.",
+            data={
+                "access": str(refresh.access_token),
+                "refresh": serializer.validated_data["refresh"],
             },
         )
 
