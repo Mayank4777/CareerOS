@@ -10,6 +10,14 @@ import { APP_ROUTES } from "@/constants/routes";
 import { registerSchema, type RegisterFormValues } from "@/validation/auth";
 import { useRegisterMutation } from "@/services/auth-mutations";
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  const err = error as any;
+  if (err?.code === "ERR_NETWORK" || !err?.response) {
+    return "Cannot connect to backend server. Please verify that Django is running at http://127.0.0.1:8000.";
+  }
+  return err.response?.data?.message || err.response?.data?.detail || fallback;
+}
+
 export function RegisterPage() {
   const navigate = useNavigate();
   const mutation = useRegisterMutation();
@@ -111,7 +119,7 @@ export function RegisterPage() {
 
           {mutation.isError ? (
             <p className="rounded-md border border-danger/20 bg-danger/10 px-3 py-2 text-sm text-danger">
-              Unable to create your account right now. Please review the form and try again.
+              {getErrorMessage(mutation.error, "Unable to create your account right now. Please review the form and try again.")}
             </p>
           ) : null}
 

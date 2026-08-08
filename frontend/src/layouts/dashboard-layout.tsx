@@ -37,7 +37,6 @@ export function DashboardLayout() {
           <Outlet />
         </Container>
       </main>
-      <div aria-live="polite" className="pointer-events-none fixed bottom-5 right-5 z-toast" />
     </div>
   );
 }

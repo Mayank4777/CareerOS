@@ -12,6 +12,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { loginSchema, type LoginFormValues } from "@/validation/auth";
 import { useLoginMutation } from "@/services/auth-mutations";
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  const err = error as any;
+  if (err?.code === "ERR_NETWORK" || !err?.response) {
+    return "Cannot connect to backend server. Please verify that Django is running at http://127.0.0.1:8000.";
+  }
+  return err.response?.data?.message || err.response?.data?.detail || fallback;
+}
+
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -83,7 +91,7 @@ export function LoginPage() {
 
           {mutation.isError ? (
             <p className="rounded-md border border-danger/20 bg-danger/10 px-3 py-2 text-sm text-danger">
-              Unable to sign in right now. Please verify your credentials and try again.
+              {getErrorMessage(mutation.error, "Unable to sign in right now. Please verify your credentials and try again.")}
             </p>
           ) : null}
 

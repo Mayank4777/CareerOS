@@ -71,6 +71,11 @@ export default {
         normal: "250ms",
         slow: "350ms",
       },
+      zIndex: {
+        dropdown: "50",
+        modal: "60",
+        toast: "70",
+      },
     },
   },
   plugins: [],

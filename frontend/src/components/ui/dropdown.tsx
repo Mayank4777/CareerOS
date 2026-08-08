@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 
 import { ChevronDown } from "lucide-react";
 
@@ -45,7 +45,7 @@ export function Dropdown({ triggerLabel, children, align = "right", className }:
   );
 }
 
-interface DropdownItemProps extends HTMLAttributes<HTMLButtonElement> {
+interface DropdownItemProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   destructive?: boolean;
 }
 

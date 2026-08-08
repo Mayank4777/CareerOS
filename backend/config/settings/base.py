@@ -70,6 +70,8 @@ INSTALLED_APPS = [
     "apps.skills.apps.SkillsConfig",
     "apps.projects.apps.ProjectsConfig",
     "apps.certifications.apps.CertificationsConfig",
+    "apps.resumes.apps.ResumesConfig",
+    "apps.resume_editor.apps.ResumeEditorConfig",
     "apps.languages.apps.LanguagesConfig",
     "apps.achievements.apps.AchievementsConfig",
     "apps.awards.apps.AwardsConfig",
@@ -78,6 +80,12 @@ INSTALLED_APPS = [
     "apps.interests.apps.InterestsConfig",
     "apps.references.apps.ReferencesConfig",
     "apps.custom_sections.apps.CustomSectionsConfig",
+    "apps.jobs.apps.JobsConfig",
+    "apps.applications.apps.ApplicationsConfig",
+    "apps.interviews.apps.InterviewsConfig",
+    "apps.notifications.apps.NotificationsConfig",
+    "apps.ai_coach.apps.AICoachConfig",
+    "apps.user_settings.apps.UserSettingsConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -208,3 +216,7 @@ CELERY_TASK_ALWAYS_EAGER = _bool("CELERY_TASK_ALWAYS_EAGER", False)
 CELERY_TASK_TRACK_STARTED = True
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_TIMEZONE = TIME_ZONE
+
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "phi3:latest")
+OLLAMA_TIMEOUT = int(os.environ.get("OLLAMA_TIMEOUT", "300"))

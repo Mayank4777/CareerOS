@@ -39,9 +39,14 @@ class RegisterAPIView(APIView):
                 status_code=status.HTTP_409_CONFLICT,
             )
 
+        refresh = RefreshToken.for_user(user)
         return created_response(
             message="User registered successfully.",
-            data=RegisteredUserSerializer(user).data,
+            data={
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": RegisteredUserSerializer(user).data,
+            },
         )
 
 

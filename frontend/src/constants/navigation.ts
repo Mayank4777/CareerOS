@@ -1,13 +1,23 @@
 import {
   BrainCircuit,
   BriefcaseBusiness,
+  BookOpenText,
+  BadgeCheck,
+  Award,
+  Compass,
   FileText,
   LayoutDashboard,
+  Languages,
   Settings2,
   Sparkles,
+  Trophy,
+  HandHeart,
   UserRound,
   ClipboardList,
   CalendarDays,
+  GraduationCap,
+  UsersRound,
+  LayoutGrid,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -42,7 +52,7 @@ export const navigationItems: NavigationItem[] = [
       {
         label: "Education",
         path: APP_ROUTES.careerProfileEducation,
-        icon: ClipboardList,
+        icon: GraduationCap,
       },
       {
         label: "Experience",
@@ -62,7 +72,47 @@ export const navigationItems: NavigationItem[] = [
       {
         label: "Certifications",
         path: APP_ROUTES.careerProfileCertifications,
-        icon: ClipboardList,
+        icon: BadgeCheck,
+      },
+      {
+        label: "Languages",
+        path: APP_ROUTES.careerProfileLanguages,
+        icon: Languages,
+      },
+      {
+        label: "Achievements",
+        path: APP_ROUTES.careerProfileAchievements,
+        icon: Trophy,
+      },
+      {
+        label: "Awards",
+        path: APP_ROUTES.careerProfileAwards,
+        icon: Award,
+      },
+      {
+        label: "Volunteer",
+        path: APP_ROUTES.careerProfileVolunteer,
+        icon: HandHeart,
+      },
+      {
+        label: "Publications",
+        path: APP_ROUTES.careerProfilePublications,
+        icon: BookOpenText,
+      },
+      {
+        label: "Interests",
+        path: APP_ROUTES.careerProfileInterests,
+        icon: Compass,
+      },
+      {
+        label: "References",
+        path: APP_ROUTES.careerProfileReferences,
+        icon: UsersRound,
+      },
+      {
+        label: "Custom Sections",
+        path: APP_ROUTES.careerProfileCustomSections,
+        icon: LayoutGrid,
       },
       {
         label: "Career Goals",
@@ -80,11 +130,6 @@ export const navigationItems: NavigationItem[] = [
       {
         label: "Resume Library",
         path: APP_ROUTES.resumeLibrary,
-        icon: FileText,
-      },
-      {
-        label: "Resume Editor",
-        path: APP_ROUTES.resumeEditor,
         icon: FileText,
       },
       {

@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { ModalShell } from "@/components/ui/modal-shell";
 
 interface ConfirmationDialogProps {
   open: boolean;
@@ -28,20 +29,22 @@ export function ConfirmationDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-modal flex items-center justify-center bg-neutral-900/60 px-4">
-      <div className="w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-lg">
-        <h3 className="text-lg font-semibold text-primary">{title}</h3>
+    <ModalShell open={open} panelClassName="max-w-md" role="alertdialog" titleId="confirmation-dialog-title">
+      <div className="p-6">
+        <h3 id="confirmation-dialog-title" className="text-lg font-semibold text-primary">
+          {title}
+        </h3>
         <p className="mt-2 text-sm leading-6 text-secondary">{description}</p>
         {children ? <div className="mt-4">{children}</div> : null}
         <div className="mt-6 flex justify-end gap-3">
-          <Button variant="secondary" onClick={onCancel}>
+          <Button type="button" variant="secondary" onClick={onCancel}>
             {cancelLabel}
           </Button>
-          <Button variant="destructive" onClick={onConfirm}>
+          <Button type="button" variant="destructive" onClick={onConfirm}>
             {confirmLabel}
           </Button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 }

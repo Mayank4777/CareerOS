@@ -9,31 +9,33 @@ import {
 import { cn } from "@/lib/class-name";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "destructive";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "destructive" | "gradient";
   size?: "sm" | "md" | "lg";
   loading?: boolean;
   asChild?: boolean;
 }
 
 const baseStyles =
-  "inline-flex items-center justify-center gap-2 rounded-md border text-sm font-medium transition-colors duration-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-borderFocus focus-visible:ring-offset-2 focus-visible:ring-offset-app disabled:pointer-events-none disabled:opacity-50";
+  "inline-flex items-center justify-center gap-2 rounded-xl text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-app disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]";
 
 const variantStyles: Record<NonNullable<ButtonProps["variant"]>, string> = {
   primary:
-    "border-transparent bg-brand-600 text-white shadow-sm hover:bg-brand-700 active:bg-brand-800",
+    "border border-indigo-500/40 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-500/20 hover:from-indigo-500 hover:to-indigo-600 hover:shadow-indigo-500/30",
+  gradient:
+    "border border-indigo-400/40 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-500 text-white shadow-md shadow-cyan-500/20 hover:shadow-cyan-500/35 hover:brightness-110",
   secondary:
-    "border-border bg-surface text-primary hover:border-borderHover hover:bg-hover",
+    "border border-border bg-surface/80 text-primary backdrop-blur-md hover:border-brand-500/40 hover:bg-hover",
   outline:
-    "border-border bg-transparent text-primary hover:border-borderHover hover:bg-hover",
-  ghost: "border-transparent bg-transparent text-primary hover:bg-hover",
+    "border border-border/80 bg-transparent text-primary hover:border-brand-500/40 hover:bg-hover/60",
+  ghost: "border-transparent bg-transparent text-primary hover:bg-hover/60",
   destructive:
-    "border-transparent bg-danger text-white shadow-sm hover:opacity-90 active:opacity-80",
+    "border border-red-500/30 bg-red-600/90 text-white shadow-sm hover:bg-red-500 active:bg-red-700",
 };
 
 const sizeStyles: Record<NonNullable<ButtonProps["size"]>, string> = {
-  sm: "h-8 px-3",
-  md: "h-10 px-4",
-  lg: "h-11 px-5 text-base",
+  sm: "h-8 px-3 text-xs rounded-lg",
+  md: "h-10 px-4 text-sm",
+  lg: "h-11 px-6 text-base rounded-2xl",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(

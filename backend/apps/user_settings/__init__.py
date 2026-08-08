@@ -1,0 +1,1 @@
+"""User Settings application module."""
