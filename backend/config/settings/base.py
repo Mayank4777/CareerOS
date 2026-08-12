@@ -134,20 +134,29 @@ TEMPLATES = [
     },
 ]
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("POSTGRES_DB", "career_os"),
-        "USER": os.environ.get("POSTGRES_USER", "career_os"),
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "career_os"),
-        "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
-        "PORT": os.environ.get("POSTGRES_PORT", "5432"),
-        "CONN_MAX_AGE": _int("POSTGRES_CONN_MAX_AGE", 60),
-        "OPTIONS": {
-            "connect_timeout": _int("POSTGRES_CONNECT_TIMEOUT", 10),
-        },
+if _bool("USE_SQLITE", False):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("POSTGRES_DB", "career_os"),
+            "USER": os.environ.get("POSTGRES_USER", "career_os"),
+            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "career_os"),
+            "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
+            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+            "CONN_MAX_AGE": _int("POSTGRES_CONN_MAX_AGE", 60),
+            "OPTIONS": {
+                "connect_timeout": _int("POSTGRES_CONNECT_TIMEOUT", 10),
+            },
+        }
+    }
+
 
 CACHES = {
     "default": {

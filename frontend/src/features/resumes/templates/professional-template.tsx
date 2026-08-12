@@ -1,137 +1,108 @@
 import type { ResumeTemplateProps } from "./types";
-import { getSectionRecords } from "./types";
+import { getNormalizedResumeData } from "./types";
 
-export function ProfessionalTemplate({
-  resume,
-  sections,
-  allSectionItems,
-  allSourceRecords,
-}: ResumeTemplateProps) {
-  // Sort sections by display order
-  const sortedSections = sections
-    .filter((s) => s.is_visible)
-    .slice()
-    .sort((a, b) => a.display_order - b.display_order);
-
-  // Find personal information
-  const personalInfoSection = sections.find((s) => s.section_type === "personal_information");
-  const personalRecords = personalInfoSection
-    ? getSectionRecords(personalInfoSection, allSectionItems, allSourceRecords)
-    : [];
-  const primaryRecord = personalRecords[0];
+export function ProfessionalTemplate(props: ResumeTemplateProps) {
+  const data = getNormalizedResumeData(props);
+  const info = data.personal_info || {};
+  const summary = data.summary;
+  const sections = data.sections || [];
 
   return (
-    <div className="flex h-full flex-col p-9 text-[#374151] bg-white leading-normal text-[11px] overflow-y-auto font-serif">
-      {/* Template 7 Header Layout */}
-      {primaryRecord ? (
-        <header className="text-center mb-6">
-          <h1 className="text-[28px] font-bold text-[#111827] tracking-normal uppercase font-serif">
-            {primaryRecord.title}
-          </h1>
-          {primaryRecord.subtitle ? (
-            <p className="text-[11px] font-bold text-slate-500 tracking-widest uppercase mt-1 font-sans">
-              {primaryRecord.subtitle}
-            </p>
-          ) : null}
-          {primaryRecord.meta?.length ? (
-            <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-0.5 mt-2.5 text-[10.5px] text-slate-500 font-sans">
-              {primaryRecord.meta.map((item, idx) => (
-                <span key={idx} className="flex items-center gap-2">
-                  {idx > 0 && <span className="text-slate-300 font-bold">•</span>}
-                  {item}
-                </span>
-              ))}
-            </div>
-          ) : null}
-        </header>
-      ) : (
-        <header className="text-center mb-5">
-          <h1 className="text-[24px] font-bold text-[#111827] uppercase font-serif">{resume.title}</h1>
-          <p className="text-[10px] text-slate-400 tracking-wider uppercase mt-1 font-sans">Professional Resume</p>
-        </header>
-      )}
+    <div className="printable-resume flex min-h-full flex-col bg-white text-[#1f2937] font-sans text-[10px] leading-normal">
+      {/* Corporate Dark Banner Header (Template 8 / 4 style) */}
+      <div className="bg-gradient-to-r from-[#0b2540] to-[#114b5f] text-white p-6 pb-5 space-y-2">
+        <h1 className="text-[26px] font-extrabold tracking-wide uppercase leading-tight text-white">
+          {info.full_name || props.resume.title}
+        </h1>
+        {info.headline ? (
+          <p className="text-[11px] font-bold text-[#dff6ff] tracking-widest uppercase">
+            {info.headline}
+          </p>
+        ) : null}
 
-      {/* Main Content Sections */}
-      <div className="space-y-5 flex-1">
-        {/* Summary (if present) */}
-        {primaryRecord?.description ? (
-          <div className="space-y-1.5 page-break-inside-avoid">
-            <h5 className="text-[12.5px] font-bold uppercase tracking-wider text-[#111827] border-b-2 border-[#3f3f46] pb-1 font-sans">
-              Professional Summary
-            </h5>
-            <p className="text-[10.5px] text-slate-700 leading-relaxed text-justify italic">
-              {primaryRecord.description}
+        <div className="flex flex-wrap items-center pt-1 text-[9.5px] text-[#d9edf7] gap-3 font-medium">
+          {info.email ? <span>{info.email}</span> : null}
+          {info.phone ? <span>• {info.phone}</span> : null}
+          {info.location ? <span>• {info.location}</span> : null}
+          {info.linkedin ? <span>• {info.linkedin}</span> : null}
+          {info.github ? <span>• {info.github}</span> : null}
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="p-6 space-y-4 flex-1">
+        {summary ? (
+          <div className="space-y-1">
+            <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0f3a57] border-b-2 border-[#0f3a57] pb-0.5">
+              Professional Overview
+            </h3>
+            <p className="text-[9.5px] text-slate-700 leading-relaxed italic border-l-2 border-[#0f3a57] pl-3">
+              {summary}
             </p>
           </div>
         ) : null}
 
-        {sortedSections
-          .filter((section) => section.section_type !== "personal_information")
-          .map((section) => {
-            const records = getSectionRecords(section, allSectionItems, allSourceRecords);
-            if (records.length === 0) return null;
+        {sections
+          .filter((sec: any) => sec.visible !== false && sec.items && sec.items.length > 0)
+          .map((sec: any) => (
+            <div key={sec.key || sec.title} className="space-y-2">
+              <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0f3a57] border-b-2 border-[#d5e4f8] pb-0.5">
+                {sec.title}
+              </h3>
 
-            return (
-              <div key={section.id} className="space-y-2 page-break-inside-avoid">
-                {/* Section Title */}
-                <h5 className="text-[12.5px] font-bold uppercase tracking-wider text-[#111827] border-b-2 border-[#3f3f46] pb-1 font-sans">
-                  {section.title}
-                </h5>
-
-                {/* Section Items */}
-                <div className="space-y-3">
-                  {records.map((record) => {
-                    const isSkills = section.section_type === "skills";
-
-                    if (isSkills) {
-                      return (
-                        <div key={record.id} className="flex flex-wrap gap-x-3 gap-y-1.5 pt-0.5 font-sans font-medium text-slate-700">
-                          {record.meta?.map((val) => (
-                            <span
-                              key={val}
-                              className="text-[10px] px-2 py-0.5 border border-slate-200 rounded-sm"
-                            >
-                              {val}
-                            </span>
-                          )) ?? (
-                            <span className="font-bold text-slate-900 text-[11px]">{record.title}</span>
-                          )}
-                        </div>
-                      );
-                    }
-
+              <div className="space-y-3">
+                {sec.items?.map((item: any, idx: number) => {
+                  if (sec.key === "skills") {
                     return (
-                      <div key={record.id} className="space-y-1">
-                        <div className="flex justify-between items-start gap-4">
-                          <div>
-                            <strong className="text-[11.5px] font-bold text-slate-900 leading-tight">
-                              {record.title}
-                            </strong>
-                            {record.subtitle ? (
-                              <div className="text-[10px] font-medium text-slate-500 italic mt-0.5">
-                                {record.subtitle}
-                              </div>
-                            ) : null}
-                          </div>
-                          {record.meta && record.meta.length > 0 ? (
-                            <div className="text-[10px] text-slate-500 font-sans italic text-right shrink-0">
-                              {record.meta[record.meta.length - 1]}
-                            </div>
-                          ) : null}
+                      <div key={idx} className="grid grid-cols-[140px_1fr] gap-2 items-start py-0.5">
+                        <span className="font-bold text-[#0f3a57] text-[10px]">{item.category}:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {item.skills?.map((sk: string) => (
+                            <span key={sk} className="bg-[#f0f7ff] text-[#0f3a57] px-2 py-0.5 rounded border border-[#c7d9f1] text-[8.5px] font-semibold">
+                              {sk}
+                            </span>
+                          ))}
                         </div>
-
-                        {record.description ? (
-                          <div className="text-[10px] text-slate-650 leading-relaxed text-justify whitespace-pre-line pl-3 border-l border-slate-100 font-serif">
-                            {record.description}
-                          </div>
-                        ) : null}
                       </div>
                     );
-                  })}
-                </div>
+                  }
+
+                  return (
+                    <div key={idx} className="space-y-1">
+                      <div className="flex justify-between items-baseline gap-2">
+                        <span className="font-bold text-[#0b2540] text-[10.5px]">
+                          {item.title || item.institution || item.name}
+                        </span>
+                        {(item.start_date || item.end_date || item.issue_date) && (
+                          <span className="text-[9px] font-bold text-slate-500 text-right shrink-0">
+                            {item.start_date} {item.end_date ? `- ${item.end_date}` : ""} {item.issue_date}
+                          </span>
+                        )}
+                      </div>
+
+                      {(item.company || item.degree || item.organization) && (
+                        <p className="text-[9.5px] font-medium text-[#114b5f] italic">
+                          {item.company || item.organization} {item.degree ? `— ${item.degree} (${item.field_of_study})` : ""}
+                        </p>
+                      )}
+
+                      {item.bullets && item.bullets.length > 0 ? (
+                        <ul className="list-disc pl-4 text-[9px] text-slate-650 space-y-0.5">
+                          {item.bullets.map((b: string, i: number) => (
+                            <li key={i}>{b}</li>
+                          ))}
+                        </ul>
+                      ) : item.description ? (
+                        <p className="text-[9px] text-slate-600 leading-normal pl-2 border-l border-slate-200">
+                          {item.description}
+                        </p>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
+            </div>
+          ))}
       </div>
     </div>
   );

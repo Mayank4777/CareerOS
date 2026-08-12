@@ -70,6 +70,7 @@ export interface SectionRecord {
 
 export interface SectionModulePageProps {
   config: SectionModuleConfig;
+  topContent?: ReactNode;
 }
 
 export interface SectionResourceDialogProps<TRecord extends SectionRecord> {

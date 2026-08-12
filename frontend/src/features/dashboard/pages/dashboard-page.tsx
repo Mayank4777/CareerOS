@@ -1,139 +1,200 @@
-import { BrainCircuit, BriefcaseBusiness, CheckCircle2, ClipboardList, Clock3, FileText, Sparkles } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { BrainCircuit, CheckCircle2, ClipboardList, Clock3, FileText, Sparkles, ArrowRight, AlertTriangle } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { PageHeader } from "@/components/ui/page-header";
 import { SectionCard } from "@/components/cards/section-card";
 import { StatCard } from "@/components/cards/stat-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/empty-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ErrorState } from "@/components/ui/error-state";
 import { APP_ROUTES } from "@/constants/routes";
-import { Link } from "react-router-dom";
-
-const stats = [
-  {
-    title: "Career score",
-    value: "84",
-    change: "+6 this week",
-    icon: Sparkles,
-    tone: "success" as const,
-    description: "Profile readiness across the core modules",
-  },
-  {
-    title: "Active applications",
-    value: "12",
-    change: "+3 open",
-    icon: ClipboardList,
-    tone: "info" as const,
-    description: "Applications currently under tracking",
-  },
-  {
-    title: "Interviews scheduled",
-    value: "4",
-    change: "2 this week",
-    icon: Clock3,
-    tone: "warning" as const,
-    description: "Upcoming conversations in the pipeline",
-  },
-  {
-    title: "Resume versions",
-    value: "7",
-    change: "+1 saved",
-    icon: FileText,
-    tone: "neutral" as const,
-    description: "Current and historical resume variants",
-  },
-];
+import { fetchDashboardIntelligence } from "../services/dashboard";
 
 export function DashboardPage() {
+  const intelligenceQuery = useQuery({
+    queryKey: ["dashboard", "intelligence"],
+    queryFn: fetchDashboardIntelligence,
+  });
+
+  if (intelligenceQuery.isLoading) {
+    return <LoadingState label="Analyzing career intelligence..." />;
+  }
+
+  if (intelligenceQuery.isError || !intelligenceQuery.data) {
+    return (
+      <ErrorState
+        description="Could not load career intelligence metrics."
+        onRetry={() => {
+          void intelligenceQuery.refetch();
+        }}
+      />
+    );
+  }
+
+  const data = intelligenceQuery.data;
+
+  const stats = [
+    {
+      title: "Career score",
+      value: `${data.careerScore}%`,
+      change: `${data.profileCompleteness}% profile ready`,
+      icon: Sparkles,
+      tone: "success" as const,
+      description: "Overall profile completeness & career health",
+    },
+    {
+      title: "ATS readiness",
+      value: `${data.atsReadiness}%`,
+      change: `${data.resumesCount} resumes created`,
+      icon: FileText,
+      tone: "info" as const,
+      description: "Average ATS score across active resume drafts",
+    },
+    {
+      title: "Active applications",
+      value: String(data.activeApplications),
+      change: "Tracking open",
+      icon: ClipboardList,
+      tone: "warning" as const,
+      description: "Job applications currently in your pipeline",
+    },
+    {
+      title: "Upcoming interviews",
+      value: String(data.upcomingInterviews),
+      change: "Scheduled",
+      icon: Clock3,
+      tone: "neutral" as const,
+      description: "Upcoming conversations with recruiters",
+    },
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
-        title="Dashboard"
-        description="A premium command center for the user's career operations, ready for live data."
+        title="Career Dashboard"
+        description="Real-time career progress tracking, ATS readiness, and recommended actions."
         breadcrumbs={[{ label: "Dashboard" }]}
         actions={
           <>
-            <Button asChild variant="secondary">
-              <Link to={APP_ROUTES.careerProfile}>Update profile</Link>
+            <Button asChild variant="secondary" size="sm">
+              <Link to={APP_ROUTES.careerProfile}>Update Career Profile</Link>
             </Button>
-            <Button asChild>
-              <Link to={APP_ROUTES.resume}>Review resume</Link>
+            <Button asChild size="sm">
+              <Link to={APP_ROUTES.resume}>Create Resume</Link>
             </Button>
           </>
         }
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (
           <StatCard key={stat.title} {...stat} />
         ))}
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.6fr)]">
+      {/* Missing Information Banners */}
+      {data.missingItems.length > 0 && (
         <SectionCard
-          title="AI guidance"
-          description="A short overview of the kind of insight the next AI modules will provide."
+          title="Missing Profile Information"
+          description="CareerOS detected missing career profile fields that impact your AI resume generation score."
         >
-          <div className="space-y-4">
-            <div className="rounded-xl border border-border bg-hover/40 p-4">
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 text-white">
-                  <BrainCircuit className="h-4 w-4" />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-medium text-primary">Profile gap detected</p>
-                    <Badge tone="info">High impact</Badge>
+          <div className="grid gap-2.5 md:grid-cols-2">
+            {data.missingItems.map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between p-3 rounded-md border border-amber-500/30 bg-amber-500/5">
+                <div className="space-y-0.5 pr-3 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span className="text-xs font-semibold text-primary truncate">{item.title}</span>
+                    <Badge tone="warning" className="text-[9px] uppercase">{item.severity}</Badge>
                   </div>
-                  <p className="text-sm leading-6 text-secondary">
-                    Add more detail to recent experience and projects to improve matching quality
-                    for upcoming job applications.
-                  </p>
+                  <p className="text-[11px] text-secondary leading-snug truncate">{item.description}</p>
+                </div>
+                <Button asChild variant="secondary" size="sm" className="shrink-0 text-xs">
+                  <Link to={item.path}>Add {item.section.replace("-", " ")}</Link>
+                </Button>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      )}
+
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(300px,0.6fr)]">
+        <SectionCard
+          title="Recommended Actions"
+          description="Actionable career recommendations calculated by CareerOS."
+        >
+          <div className="space-y-2.5">
+            {data.recommendedActions.map((action) => (
+              <div key={action.id} className="rounded-md border border-border bg-surface/60 p-3 space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <div className="mt-0.5 flex h-7 w-7 items-center justify-center rounded bg-indigo-600/90 text-white shrink-0">
+                      <BrainCircuit className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs font-semibold text-primary truncate">{action.title}</p>
+                        <Badge tone="info">{action.badge}</Badge>
+                      </div>
+                      <p className="text-xs leading-normal text-secondary mt-0.5">{action.description}</p>
+                    </div>
+                  </div>
+                  <Button asChild size="sm" variant="primary" className="shrink-0 flex items-center gap-1">
+                    <Link to={action.actionPath}>
+                      {action.actionLabel} <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </Button>
                 </div>
               </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Button variant="secondary" className="justify-start">
-                <CheckCircle2 className="h-4 w-4" />
-                Complete profile sections
-              </Button>
-              <Button variant="secondary" className="justify-start">
-                <BriefcaseBusiness className="h-4 w-4" />
-                Review saved jobs
-              </Button>
-            </div>
+            ))}
           </div>
         </SectionCard>
 
-        <SectionCard title="Recent activity" description="A lightweight placeholder for the activity feed.">
-          <div className="space-y-4">
-            <EmptyState
-              title="No activity loaded yet"
-              description="Once the first module queries are wired up, this area will surface recent actions, updates, and reminders."
-              icon={<ClipboardList className="h-6 w-6" />}
-            />
+        <SectionCard title="Recent Activity" description="Timeline of career updates and resume generation logs.">
+          <div className="space-y-2 text-xs">
+            {data.recentActivity.map((act) => (
+              <div key={act.id} className="p-2.5 rounded-md border border-border bg-hover/30 space-y-0.5">
+                <div className="flex items-center justify-between text-primary font-medium">
+                  <span className="truncate">{act.title}</span>
+                  <span className="text-[10px] text-muted font-mono shrink-0 ml-2">{act.timestamp}</span>
+                </div>
+                <p className="text-secondary text-[11px] truncate">{act.description}</p>
+              </div>
+            ))}
           </div>
         </SectionCard>
       </section>
 
       <SectionCard
-        title="Quick actions"
-        description="A small set of common career-management actions ready for future expansion."
+        title="Quick Actions"
+        description="Accelerate your job search workflow."
       >
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {[
-            "Create resume version",
-            "Track a new application",
-            "Prepare for interview",
-            "Open career coach",
-          ].map((label) => (
-            <Button key={label} variant="secondary" className="justify-start">
-              {label}
-            </Button>
-          ))}
+        <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+          <Button asChild variant="secondary" size="sm" className="justify-start">
+            <Link to="/resumes">
+              <Sparkles className="h-3.5 w-3.5 text-indigo-400 mr-2" /> Create Tailored Resume
+            </Link>
+          </Button>
+          <Button asChild variant="secondary" size="sm" className="justify-start">
+            <Link to="/resumes/review">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 mr-2" /> Run AI ATS Audit
+            </Link>
+          </Button>
+          <Button asChild variant="secondary" size="sm" className="justify-start">
+            <Link to="/applications">
+              <ClipboardList className="h-3.5 w-3.5 text-cyan-400 mr-2" /> Track New Application
+            </Link>
+          </Button>
+          <Button asChild variant="secondary" size="sm" className="justify-start">
+            <Link to="/ai-coach">
+              <BrainCircuit className="h-3.5 w-3.5 text-amber-400 mr-2" /> Open AI Career Coach
+            </Link>
+          </Button>
         </div>
       </SectionCard>
     </div>
   );
 }
+

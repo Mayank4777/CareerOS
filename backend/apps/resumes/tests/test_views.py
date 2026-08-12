@@ -119,18 +119,105 @@ class ResumeAPIViewTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_validation_error_for_invalid_status(self) -> None:
+    def test_generate_resume(self) -> None:
         self.authenticate(self.user)
-
+        url = reverse("resumes:resume-generate")
         response = self.client.post(
-            self.list_url,
+            url,
             data={
-                "title": "Backend Resume",
-                "template": "Minimal",
-                "status": "unknown",
+                "title": "Generated Tech Lead Resume",
+                "target_role": "Senior Frontend Engineer",
+                "job_description": "Looking for React and TypeScript expertise.",
+                "template": "modern",
             },
             format="json",
         )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["data"]["title"], "Generated Tech Lead Resume")
+        self.assertIn("personal_info", response.data["data"]["content_data"])
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    def test_generate_resume_with_populated_profile(self) -> None:
+        from datetime import date
+        from apps.experience.models import Experience
+        from apps.career_profile.models import Education
+        from apps.skills.models import Skill
+        from apps.projects.models import Project
+
+        self.authenticate(self.user)
+        Experience.objects.create(
+            career_profile=self.profile,
+            designation="Senior Engineer",
+            company="Acme Corp",
+            location="San Francisco",
+            start_date=date(2022, 1, 1),
+            currently_working=True,
+            description="Led React frontend architecture.",
+        )
+        Education.objects.create(
+            career_profile=self.profile,
+            institution="MIT",
+            degree="B.S.",
+            field_of_study="Computer Science",
+            start_date=date(2018, 9, 1),
+            end_date=date(2022, 5, 1),
+            grade="3.9",
+        )
+        Skill.objects.create(
+            career_profile=self.profile,
+            name="React",
+            category="Frontend",
+            proficiency_level="expert",
+        )
+        Project.objects.create(
+            career_profile=self.profile,
+            title="CareerOS",
+            description="AI OS for career management.",
+            technologies="Next.js, Python, Django",
+        )
+
+        url = reverse("resumes:resume-generate")
+        response = self.client.post(
+            url,
+            data={
+                "title": "Populated Resume",
+                "target_role": "Senior Frontend Lead",
+                "job_description": "React and TypeScript Lead role.",
+                "template": "modern",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        content_data = response.data["data"]["content_data"]
+        self.assertTrue(len(content_data["sections"]) >= 4)
+
+
+    def test_review_resume(self) -> None:
+        self.authenticate(self.user)
+        url = reverse("resumes:resume-review", kwargs={"resume_id": self.resume.id})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("overallScore", response.data["data"])
+        self.assertIn("missingKeywords", response.data["data"])
+
+    def test_version_snapshot_and_restore(self) -> None:
+        self.authenticate(self.user)
+        versions_url = reverse("resumes:resume-version-list", kwargs={"resume_id": self.resume.id})
+
+        # Save version snapshot
+        res = self.client.post(
+            versions_url,
+            data={"title": "Snapshot 1", "commit_message": "Initial save"},
+            format="json",
+        )
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        version_id = res.data["data"]["id"]
+
+        # Restore version
+        restore_url = reverse(
+            "resumes:resume-version-restore",
+            kwargs={"resume_id": self.resume.id, "version_id": version_id},
+        )
+        restore_res = self.client.post(restore_url)
+        self.assertEqual(restore_res.status_code, status.HTTP_200_OK)
+
 

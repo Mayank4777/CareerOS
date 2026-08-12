@@ -11,12 +11,12 @@ export function DashboardLayout() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const sidebarPaddingClassName = useMemo(
-    () => (sidebarCollapsed ? "lg:pl-[80px]" : "lg:pl-[280px]"),
+    () => (sidebarCollapsed ? "lg:pl-[64px]" : "lg:pl-[264px]"),
     [sidebarCollapsed]
   );
 
   const sidebarHeaderOffsetClassName = useMemo(
-    () => (sidebarCollapsed ? "lg:left-[80px]" : "lg:left-[280px]"),
+    () => (sidebarCollapsed ? "lg:left-[64px]" : "lg:left-[264px]"),
     [sidebarCollapsed]
   );
 
@@ -32,8 +32,8 @@ export function DashboardLayout() {
         onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
         sidebarOffsetClassName={sidebarHeaderOffsetClassName}
       />
-      <main className={cn("pt-16 transition-[padding] duration-normal", sidebarPaddingClassName)}>
-        <Container className="py-6 sm:py-8 lg:py-10">
+      <main className={cn("pt-16 transition-[padding] duration-150", sidebarPaddingClassName)}>
+        <Container className="py-4 sm:py-6 lg:py-6">
           <Outlet />
         </Container>
       </main>

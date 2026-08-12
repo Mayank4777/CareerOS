@@ -19,7 +19,7 @@ export function SectionCard({ title, description, children, footer, className }:
         {description ? <CardDescription>{description}</CardDescription> : null}
       </CardHeader>
       <CardContent>{children}</CardContent>
-      {footer ? <div className="border-t border-border px-6 py-4">{footer}</div> : null}
+      {footer ? <div className="border-t border-border/70 px-4 py-3">{footer}</div> : null}
     </Card>
   );
 }

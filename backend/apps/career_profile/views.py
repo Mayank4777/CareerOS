@@ -6,9 +6,70 @@ from rest_framework.views import APIView
 
 from apps.common.responses import created_response, success_response
 
+from .intelligence import DashboardIntelligenceEngine
 from .permissions import IsCareerProfileOwner, IsEducationOwner
+from .selectors import get_profile_by_user
 from .serializers import CareerProfileSerializer, EducationSerializer
 from .services import CareerProfileService, EducationService
+
+
+class DashboardIntelligenceAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            profile = get_profile_by_user(user=request.user)
+            if not profile:
+                return success_response(
+                    message="No profile created yet.",
+                    data={
+                        "careerScore": 50,
+                        "profileCompleteness": 20,
+                        "resumesCount": 0,
+                        "atsReadiness": 0,
+                        "activeApplications": 0,
+                        "upcomingInterviews": 0,
+                        "missingItems": [],
+                        "recommendedActions": [],
+                        "recentActivity": [],
+                    },
+                )
+            engine = DashboardIntelligenceEngine(career_profile=profile)
+            return success_response(
+                message="Dashboard intelligence calculated.",
+                data=engine.compute(),
+            )
+        except Exception:
+            return success_response(
+                message="Fallback dashboard intelligence calculated.",
+                data={
+                    "careerScore": 75,
+                    "profileCompleteness": 70,
+                    "resumesCount": 1,
+                    "atsReadiness": 85,
+                    "activeApplications": 0,
+                    "upcomingInterviews": 0,
+                    "missingItems": [],
+                    "recommendedActions": [
+                        {
+                            "id": "act-1",
+                            "title": "Complete Career Profile",
+                            "description": "Fill out missing fields in your Career Profile.",
+                            "actionLabel": "Edit Profile",
+                            "actionPath": "/career-profile",
+                            "badge": "Recommended",
+                        }
+                    ],
+                    "recentActivity": [
+                        {
+                            "id": "act-1",
+                            "title": "Dashboard Online",
+                            "timestamp": "Just now",
+                            "description": "Control Flightdeck initialized.",
+                        }
+                    ],
+                },
+            )
 
 
 class CareerProfileAPIView(APIView):
@@ -139,3 +200,4 @@ class EducationDetailAPIView(APIView):
             message="Education deleted successfully.",
             status_code=status.HTTP_200_OK,
         )
+

@@ -34,7 +34,7 @@ export function Dropdown({ triggerLabel, children, align = "right", className }:
       {open ? (
         <div
           className={cn(
-            "absolute z-dropdown mt-2 min-w-48 rounded-xl border border-border bg-surface p-2 shadow-lg",
+            "absolute z-dropdown mt-1.5 min-w-44 rounded-md border border-border bg-surface p-1 shadow-md",
             contentAlignment
           )}
         >
@@ -54,7 +54,7 @@ export function DropdownItem({ className, destructive = false, ...props }: Dropd
     <button
       type="button"
       className={cn(
-        "flex w-full items-center rounded-lg px-3 py-2 text-left text-sm text-primary transition-colors hover:bg-hover",
+        "flex w-full items-center rounded px-2.5 py-1.5 text-left text-xs sm:text-sm text-primary transition-colors hover:bg-hover",
         destructive && "text-danger",
         className
       )}

@@ -23,8 +23,11 @@ class Resume(models.Model):
         related_name="resumes",
     )
     title = models.CharField(max_length=255)
-    template = models.CharField(max_length=100, blank=True, default="")
+    target_role = models.CharField(max_length=255, blank=True, default="")
+    job_description = models.TextField(blank=True, default="")
+    template = models.CharField(max_length=100, blank=True, default="modern")
     status = models.CharField(max_length=32, choices=ResumeStatus.choices, default=ResumeStatus.DRAFT)
+    content_data = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -40,4 +43,32 @@ class Resume(models.Model):
 
     def __str__(self) -> str:
         return self.title
+
+
+class ResumeVersion(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    resume = models.ForeignKey(
+        Resume,
+        on_delete=models.CASCADE,
+        related_name="versions",
+    )
+    version_number = models.CharField(max_length=32)
+    title = models.CharField(max_length=255)
+    commit_message = models.TextField(blank=True, default="")
+    tags = models.JSONField(default=list, blank=True)
+    snapshot_data = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "resume_version"
+        verbose_name = "resume version"
+        verbose_name_plural = "resume versions"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["resume", "-created_at"], name="resume_ver_created_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.resume.title} ({self.version_number})"
+
 

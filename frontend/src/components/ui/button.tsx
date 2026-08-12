@@ -16,26 +16,26 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const baseStyles =
-  "inline-flex items-center justify-center gap-2 rounded-xl text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-app disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]";
+  "inline-flex items-center justify-center gap-2 rounded-md text-sm font-semibold tracking-tight transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 focus-visible:ring-offset-app disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]";
 
 const variantStyles: Record<NonNullable<ButtonProps["variant"]>, string> = {
   primary:
-    "border border-indigo-500/40 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-500/20 hover:from-indigo-500 hover:to-indigo-600 hover:shadow-indigo-500/30",
+    "bg-indigo-600 text-white hover:bg-indigo-500 active:bg-indigo-700 border border-indigo-500/80 shadow-xs font-semibold",
   gradient:
-    "border border-indigo-400/40 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-500 text-white shadow-md shadow-cyan-500/20 hover:shadow-cyan-500/35 hover:brightness-110",
+    "bg-indigo-600 text-white hover:bg-indigo-500 active:bg-indigo-700 border border-indigo-500/80 shadow-xs font-semibold",
   secondary:
-    "border border-border bg-surface/80 text-primary backdrop-blur-md hover:border-brand-500/40 hover:bg-hover",
+    "border border-border bg-surface text-primary hover:bg-hover hover:border-neutral-600 font-semibold shadow-xs",
   outline:
-    "border border-border/80 bg-transparent text-primary hover:border-brand-500/40 hover:bg-hover/60",
-  ghost: "border-transparent bg-transparent text-primary hover:bg-hover/60",
+    "border border-border bg-transparent text-primary hover:bg-hover font-semibold",
+  ghost: "bg-transparent text-secondary hover:text-primary hover:bg-hover font-medium",
   destructive:
-    "border border-red-500/30 bg-red-600/90 text-white shadow-sm hover:bg-red-500 active:bg-red-700",
+    "border border-red-500/30 bg-red-600 text-white hover:bg-red-500 font-semibold",
 };
 
 const sizeStyles: Record<NonNullable<ButtonProps["size"]>, string> = {
-  sm: "h-8 px-3 text-xs rounded-lg",
-  md: "h-10 px-4 text-sm",
-  lg: "h-11 px-6 text-base rounded-2xl",
+  sm: "h-8 px-4 text-xs sm:text-sm rounded-md",
+  md: "h-9 px-6 text-sm sm:text-base rounded-md",
+  lg: "h-10 px-8 text-base sm:text-lg rounded-md",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(

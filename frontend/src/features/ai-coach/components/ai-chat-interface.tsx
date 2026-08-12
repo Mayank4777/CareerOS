@@ -93,64 +93,64 @@ export function AIChatInterface() {
   };
 
   return (
-    <Card className="flex flex-col h-[680px] border-indigo-500/20 bg-card/90 overflow-hidden shadow-2xl">
-      {/* Header Flightdeck */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border/80 bg-surface/80 backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-            <Bot className="w-5 h-5" />
+    <Card className="flex flex-col h-[600px] border border-border bg-card overflow-hidden shadow-xs">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-surface">
+        <div className="flex items-center gap-2.5">
+          <div className="p-1.5 rounded-md bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            <Bot className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-primary flex items-center gap-2">
+            <h3 className="text-xs font-bold text-primary flex items-center gap-1.5">
               CareerOS AI Advisor
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             </h3>
-            <p className="text-[11px] text-secondary">
+            <p className="text-[10px] text-secondary">
               Powered by local Ollama server • Confidential & Private
             </p>
           </div>
         </div>
 
-        <Badge tone="info" className="text-[10px] font-mono uppercase">
+        <Badge tone="info" className="text-[9px] font-mono uppercase">
           Local Ollama Engine
         </Badge>
       </div>
 
       {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.map((msg) => {
           const isUser = msg.sender === "user";
           return (
             <div
               key={msg.id}
-              className={`flex items-start gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}
+              className={`flex items-start gap-2.5 ${isUser ? "flex-row-reverse" : "flex-row"}`}
             >
               <div
-                className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-xs font-bold ${
+                className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 text-xs font-semibold ${
                   isUser
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
+                    ? "bg-indigo-600 text-white"
                     : msg.error
                     ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                    : "bg-surface border border-indigo-500/30 text-indigo-400"
+                    : "bg-surface border border-border text-indigo-400"
                 }`}
               >
-                {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                {isUser ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
               </div>
 
               <div
-                className={`max-w-[80%] rounded-2xl p-4 text-xs leading-relaxed space-y-2 relative group ${
+                className={`max-w-[80%] rounded-md p-3 text-xs leading-relaxed space-y-1.5 relative group ${
                   isUser
-                    ? "bg-indigo-600 text-white rounded-tr-none shadow-md shadow-indigo-600/20"
+                    ? "bg-indigo-600 text-white"
                     : msg.error
-                    ? "bg-rose-500/10 border border-rose-500/30 text-rose-200 rounded-tl-none"
-                    : "bg-surface/90 border border-border/80 text-primary rounded-tl-none shadow-sm"
+                    ? "bg-rose-500/10 border border-rose-500/30 text-rose-200"
+                    : "bg-surface border border-border text-primary"
                 }`}
               >
                 <div className="whitespace-pre-wrap font-sans">{msg.content}</div>
 
                 <div
                   className={`flex items-center justify-between pt-1 border-t ${
-                    isUser ? "border-white/20 text-indigo-200" : "border-border/40 text-secondary"
+                    isUser ? "border-white/20 text-indigo-100" : "border-border/60 text-secondary"
                   } text-[10px]`}
                 >
                   <span className="font-mono">{msg.timestamp}</span>
@@ -173,12 +173,12 @@ export function AIChatInterface() {
         })}
 
         {chatMutation.isPending && (
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-xl bg-surface border border-indigo-500/30 text-indigo-400 flex items-center justify-center shrink-0">
-              <Bot className="w-4 h-4 animate-bounce" />
+          <div className="flex items-start gap-2.5">
+            <div className="w-7 h-7 rounded-md bg-surface border border-border text-indigo-400 flex items-center justify-center shrink-0">
+              <Bot className="w-3.5 h-3.5 animate-bounce" />
             </div>
-            <div className="bg-surface/90 border border-border/80 rounded-2xl rounded-tl-none p-4 text-xs text-secondary flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-indigo-400 animate-spin" />
+            <div className="bg-surface border border-border rounded-md p-3 text-xs text-secondary flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400 animate-spin" />
               <span>Ollama is thinking...</span>
             </div>
           </div>

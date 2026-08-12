@@ -28,7 +28,7 @@ export function ModalShell({
   return (
     <div
       className={cn(
-        "fixed inset-0 z-modal flex items-center justify-center overflow-y-auto bg-neutral-900/60 px-4 py-6 sm:px-6",
+        "fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-neutral-950/75 p-4 sm:p-6 backdrop-blur-xs",
         className
       )}
     >
@@ -37,7 +37,7 @@ export function ModalShell({
         aria-labelledby={titleId}
         aria-modal="true"
         className={cn(
-          "flex w-full max-h-[90vh] flex-col overflow-y-auto rounded-xl border border-border bg-surface shadow-lg",
+          "flex w-full max-h-[85vh] flex-col overflow-y-auto rounded-lg border border-border bg-surface shadow-xl",
           panelClassName
         )}
         role={role}

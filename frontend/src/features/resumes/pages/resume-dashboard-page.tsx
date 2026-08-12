@@ -17,9 +17,11 @@ import { SectionCard } from "@/components/cards/section-card";
 import { useToast } from "@/components/ui/toast";
 import { APP_ROUTES } from "@/constants/routes";
 import { deleteResume, fetchResumes, updateResume, createResume } from "@/features/resumes/services/resumes";
+import { useGenerateResume } from "@/features/resumes/hooks/use-resumes";
+import { ResumeGenerateDialog } from "@/features/resumes/components/resume-generate-dialog";
 import { ResumeCard } from "@/features/resumes/components/resume-card";
 import { ResumeDialog } from "@/features/resumes/components/resume-dialog";
-import type { Resume, ResumeFormValues, ResumeRenameFormValues } from "@/features/resumes/types/resume";
+import type { Resume, ResumeFormValues, ResumeGeneratePayload, ResumeRenameFormValues } from "@/features/resumes/types/resume";
 
 type ResumeSortOption = "recent" | "oldest" | "title-asc" | "title-desc" | "status" | "template";
 
@@ -38,13 +40,17 @@ export function ResumeDashboardPage() {
     queryFn: fetchResumes,
   });
 
-  const createMutation = useMutation({
-    mutationFn: createResume,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["resumes"] });
-      toast.success("Resume created", "Your new resume is ready to open in the editor.");
-    },
-  });
+  const generateMutation = useGenerateResume();
+
+  const handleGenerateResume = async (payload: ResumeGeneratePayload) => {
+    try {
+      const generated = await generateMutation.mutateAsync(payload);
+      toast.success("Resume Generated", `"${generated.title}" created from your Career Profile.`);
+      navigate(APP_ROUTES.resumeEditorDetail.replace(":resumeId", generated.id));
+    } catch (err: any) {
+      toast.error("Generation Failed", err.message || "Could not generate resume.");
+    }
+  };
 
   const updateMutation = useMutation({
     mutationFn: async ({
@@ -90,10 +96,6 @@ export function ResumeDashboardPage() {
     );
   }
 
-  const handleCreateResume = async (values: ResumeFormValues | ResumeRenameFormValues) => {
-    await createMutation.mutateAsync(values as ResumeFormValues);
-  };
-
   const handleRenameResume = async (values: ResumeFormValues | ResumeRenameFormValues) => {
     if (!editingResume) {
       return;
@@ -124,18 +126,19 @@ export function ResumeDashboardPage() {
     <div className="space-y-6">
       <PageHeader
         title="Resume Dashboard"
-        description="Create, organize, and open resumes before the editor foundation lands."
+        description="Intelligent career resume composition, version control, and ATS optimization."
         breadcrumbs={[
           { label: "Dashboard", href: APP_ROUTES.dashboard },
           { label: "Resume" },
         ]}
         actions={
-          <Button type="button" onClick={() => setIsCreateOpen(true)}>
+          <Button type="button" onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            Create resume
+            Create Resume
           </Button>
         }
       />
+
 
       <SectionCard
         title="Your resumes"
@@ -217,12 +220,11 @@ export function ResumeDashboardPage() {
         </div>
       </SectionCard>
 
-      <ResumeDialog
+      <ResumeGenerateDialog
         open={isCreateOpen}
-        mode="create"
-        resume={null}
         onClose={() => setIsCreateOpen(false)}
-        onSubmit={handleCreateResume}
+        onSubmit={handleGenerateResume}
+        isLoading={generateMutation.isPending}
       />
 
       <ResumeDialog

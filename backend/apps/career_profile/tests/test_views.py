@@ -90,3 +90,16 @@ class CareerProfileAPIViewTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
+    def test_dashboard_intelligence_endpoint(self) -> None:
+        CareerProfile.objects.create(user=self.user, first_name="View", last_name="User", headline="Backend Developer")
+        self.authenticate(self.user)
+
+        dash_url = reverse("career_profile:dashboard-intelligence")
+        response = self.client.get(dash_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("careerScore", response.data["data"])
+        self.assertIn("activeApplications", response.data["data"])
+        self.assertIn("upcomingInterviews", response.data["data"])
+
+

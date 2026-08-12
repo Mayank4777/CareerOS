@@ -1,7 +1,7 @@
 import { apiClient } from "@/lib/http";
 import type { ApiResponse } from "@/types/api";
 
-import type { Resume, ResumePayload, ResumeRenamePayload } from "@/features/resumes/types/resume";
+import type { Resume, ResumeGeneratePayload, ResumePayload, ResumeRenamePayload } from "@/features/resumes/types/resume";
 
 const RESUMES_ROOT = "/resumes/";
 
@@ -32,7 +32,18 @@ export async function createResume(payload: ResumePayload): Promise<Resume> {
   return data;
 }
 
-export async function updateResume(resumeId: string, payload: ResumePayload | ResumeRenamePayload): Promise<Resume> {
+export async function generateResume(payload: ResumeGeneratePayload): Promise<Resume> {
+  const response = await apiClient.post<ApiResponse<Resume>>(`${RESUMES_ROOT}generate/`, payload);
+  const data = response.data.data;
+
+  if (!data) {
+    throw new Error("Generate resume response was empty.");
+  }
+
+  return data;
+}
+
+export async function updateResume(resumeId: string, payload: Partial<ResumePayload> | ResumeRenamePayload): Promise<Resume> {
   const response = await apiClient.patch<ApiResponse<Resume>>(`${RESUMES_ROOT}${resumeId}/`, payload);
   const data = response.data.data;
 
@@ -46,4 +57,38 @@ export async function updateResume(resumeId: string, payload: ResumePayload | Re
 export async function deleteResume(resumeId: string): Promise<void> {
   await apiClient.delete(`${RESUMES_ROOT}${resumeId}/`);
 }
+
+export async function reviewResume(resumeId: string): Promise<any> {
+  const response = await apiClient.post<ApiResponse<any>>(`${RESUMES_ROOT}${resumeId}/review/`);
+  return response.data.data;
+}
+
+export async function applyResumeSuggestion(resumeId: string, suggestion: { section_key?: string; original_text: string; suggested_text: string }): Promise<Resume> {
+  const response = await apiClient.post<ApiResponse<Resume>>(`${RESUMES_ROOT}${resumeId}/apply-suggestion/`, suggestion);
+  const data = response.data.data;
+  if (!data) {
+    throw new Error("Apply suggestion response was empty.");
+  }
+  return data;
+}
+
+export async function fetchResumeVersions(resumeId: string): Promise<any[]> {
+  const response = await apiClient.get<ApiResponse<any[]>>(`${RESUMES_ROOT}${resumeId}/versions/`);
+  return response.data.data ?? [];
+}
+
+export async function createResumeVersion(resumeId: string, payload: { title: string; commit_message?: string; tags?: string[] }): Promise<any> {
+  const response = await apiClient.post<ApiResponse<any>>(`${RESUMES_ROOT}${resumeId}/versions/`, payload);
+  return response.data.data;
+}
+
+export async function restoreResumeVersion(resumeId: string, versionId: string): Promise<Resume> {
+  const response = await apiClient.post<ApiResponse<Resume>>(`${RESUMES_ROOT}${resumeId}/versions/${versionId}/restore/`);
+  const data = response.data.data;
+  if (!data) {
+    throw new Error("Restore version response was empty.");
+  }
+  return data;
+}
+
 

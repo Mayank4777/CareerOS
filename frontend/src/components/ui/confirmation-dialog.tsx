@@ -30,17 +30,17 @@ export function ConfirmationDialog({
 
   return (
     <ModalShell open={open} panelClassName="max-w-md" role="alertdialog" titleId="confirmation-dialog-title">
-      <div className="p-6">
-        <h3 id="confirmation-dialog-title" className="text-lg font-semibold text-primary">
+      <div className="p-4 sm:p-5">
+        <h3 id="confirmation-dialog-title" className="text-base font-semibold text-primary">
           {title}
         </h3>
-        <p className="mt-2 text-sm leading-6 text-secondary">{description}</p>
-        {children ? <div className="mt-4">{children}</div> : null}
-        <div className="mt-6 flex justify-end gap-3">
-          <Button type="button" variant="secondary" onClick={onCancel}>
+        <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-secondary">{description}</p>
+        {children ? <div className="mt-3">{children}</div> : null}
+        <div className="mt-5 flex justify-end gap-2">
+          <Button type="button" variant="secondary" size="sm" onClick={onCancel}>
             {cancelLabel}
           </Button>
-          <Button type="button" variant="destructive" onClick={onConfirm}>
+          <Button type="button" variant="destructive" size="sm" onClick={onConfirm}>
             {confirmLabel}
           </Button>
         </div>

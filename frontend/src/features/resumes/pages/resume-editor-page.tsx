@@ -47,6 +47,7 @@ export function ResumeEditorPage() {
   const [selectedSectionType, setSelectedSectionType] =
     useState<ResumeEditorSectionType>("personal_information");
   const [sectionDialogMode, setSectionDialogMode] = useState<SectionDialogMode>(null);
+  const [viewMode, setViewMode] = useState<"split" | "preview" | "editor">("split");
 
   const resumeQuery = useQuery({
     queryKey: ["resumes", resumeId],
@@ -302,80 +303,54 @@ export function ResumeEditorPage() {
     <div className="space-y-6">
       <PageHeader
         title={resumeQuery.data.title}
-        description="Organize resume sections, link Career Profile records, and keep the preview in sync."
+        description="Organize resume sections, link Career Profile records, and preview in real-time."
         breadcrumbs={[
           { label: "Dashboard", href: APP_ROUTES.dashboard },
           { label: "Resume", href: APP_ROUTES.resume },
           { label: "Resume Editor" },
         ]}
         actions={
-          <Button asChild variant="secondary">
-            <Link to={APP_ROUTES.resume}>
-              <ArrowLeft className="h-4 w-4" />
-              Back to resumes
-            </Link>
-          </Button>
+          <div className="flex items-center gap-3">
+            {/* View Mode Selector */}
+            <div className="flex items-center rounded-xl border border-border bg-surface p-1 shadow-sm">
+              <Button
+                variant={viewMode === "split" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("split")}
+                className="h-8 text-xs font-semibold"
+              >
+                Split View
+              </Button>
+              <Button
+                variant={viewMode === "preview" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("preview")}
+                className="h-8 text-xs font-semibold text-indigo-400"
+              >
+                Full Screen Preview
+              </Button>
+              <Button
+                variant={viewMode === "editor" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("editor")}
+                className="h-8 text-xs font-semibold"
+              >
+                Editor Only
+              </Button>
+            </div>
+
+            <Button asChild variant="secondary">
+              <Link to={APP_ROUTES.resume}>
+                <ArrowLeft className="h-4 w-4" />
+                Back to resumes
+              </Link>
+            </Button>
+          </div>
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[240px_1fr] xl:grid-cols-[250px_1fr_500px] xl:items-start">
-        <div className="xl:sticky xl:top-24 xl:self-start">
-          <ResumeEditorSidebar
-            sections={sectionsQuery.data ?? []}
-            selectedSectionType={selectedSectionType}
-            onSelectSectionType={setSelectedSectionType}
-          />
-        </div>
-
-        <div className="xl:sticky xl:top-24 xl:self-start">
-          <ResumeEditorSectionPanel
-            sectionType={selectedSectionType}
-            activeSection={activeSection}
-            sourceRecords={sourceRecordsQuery.data ?? []}
-            sectionItems={sectionItems}
-            sourceRecordsLoading={sourceRecordsQuery.isLoading}
-            sourceRecordsError={sourceRecordsQuery.isError}
-            onRetrySourceRecords={() => {
-              void sourceRecordsQuery.refetch();
-            }}
-            onCreateSection={() => setSectionDialogMode("create")}
-            onRenameSection={() => setSectionDialogMode("rename")}
-            onToggleVisibility={() => {
-              if (!activeSection) {
-                return;
-              }
-
-              void updateSectionMutation.mutateAsync({
-                sectionId: activeSection.id,
-                payload: { isVisible: !activeSection.is_visible },
-              });
-            }}
-            onToggleInclude={(record, includedItem) => {
-              if (!activeSection) {
-                return;
-              }
-
-              if (includedItem) {
-                void deleteItemMutation.mutateAsync(includedItem.id);
-                return;
-              }
-
-              void createItemMutation.mutateAsync({
-                sourceObjectId: record.id,
-                displayOrder: getNextItemOrder(sectionItems),
-              });
-            }}
-            onMoveItem={(itemId, direction) => {
-              if (!activeSection) {
-                return;
-              }
-
-              void moveItemMutation.mutateAsync({ itemId, direction });
-            }}
-          />
-        </div>
-
-        <div className="xl:sticky xl:top-24 xl:self-start">
+      {viewMode === "preview" ? (
+        <div className="mx-auto max-w-5xl space-y-4">
           <ResumeEditorPreview
             resume={resumeQuery.data}
             sections={sectionsQuery.data ?? []}
@@ -390,7 +365,83 @@ export function ResumeEditorPage() {
             }}
           />
         </div>
-      </div>
+      ) : (
+        <div className={`grid gap-6 ${viewMode === "editor" ? "grid-cols-[250px_1fr]" : "lg:grid-cols-[240px_1fr] xl:grid-cols-[250px_1fr_520px]"} xl:items-start`}>
+          <div className="xl:sticky xl:top-24 xl:self-start">
+            <ResumeEditorSidebar
+              sections={sectionsQuery.data ?? []}
+              selectedSectionType={selectedSectionType}
+              onSelectSectionType={setSelectedSectionType}
+            />
+          </div>
+
+          <div className="xl:sticky xl:top-24 xl:self-start">
+            <ResumeEditorSectionPanel
+              sectionType={selectedSectionType}
+              activeSection={activeSection}
+              sourceRecords={sourceRecordsQuery.data ?? []}
+              sectionItems={sectionItems}
+              sourceRecordsLoading={sourceRecordsQuery.isLoading}
+              sourceRecordsError={sourceRecordsQuery.isError}
+              onRetrySourceRecords={() => {
+                void sourceRecordsQuery.refetch();
+              }}
+              onCreateSection={() => setSectionDialogMode("create")}
+              onRenameSection={() => setSectionDialogMode("rename")}
+              onToggleVisibility={() => {
+                if (!activeSection) {
+                  return;
+                }
+
+                void updateSectionMutation.mutateAsync({
+                  sectionId: activeSection.id,
+                  payload: { isVisible: !activeSection.is_visible },
+                });
+              }}
+              onToggleInclude={(record, includedItem) => {
+                if (!activeSection) {
+                  return;
+                }
+
+                if (includedItem) {
+                  void deleteItemMutation.mutateAsync(includedItem.id);
+                  return;
+                }
+
+                void createItemMutation.mutateAsync({
+                  sourceObjectId: record.id,
+                  displayOrder: getNextItemOrder(sectionItems),
+                });
+              }}
+              onMoveItem={(itemId, direction) => {
+                if (!activeSection) {
+                  return;
+                }
+
+                void moveItemMutation.mutateAsync({ itemId, direction });
+              }}
+            />
+          </div>
+
+          {viewMode === "split" && (
+            <div className="xl:sticky xl:top-24 xl:self-start">
+              <ResumeEditorPreview
+                resume={resumeQuery.data}
+                sections={sectionsQuery.data ?? []}
+                selectedSectionType={selectedSectionType}
+                selectedSection={activeSection}
+                selectedItems={sectionItems}
+                selectedRecords={getIncludedSourceRecords(sourceRecordsQuery.data ?? [], sectionItems)}
+                allSectionItems={allSectionItems}
+                allSourceRecords={allSourceRecords}
+                onUpdateTemplate={(template) => {
+                  void updateResumeMutation.mutateAsync({ template });
+                }}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {activeSectionDefinition ? (
         <ResumeEditorSectionDialog

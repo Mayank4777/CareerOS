@@ -15,15 +15,15 @@ interface StatCardProps {
 export function StatCard({ title, value, change, icon: Icon, tone = "neutral", description }: StatCardProps) {
   return (
     <Card>
-      <CardContent className="flex items-start justify-between gap-4">
-        <div className="space-y-2">
-          <p className="text-sm text-secondary">{title}</p>
-          <p className="text-3xl font-semibold tracking-tight text-primary">{value}</p>
-          {description ? <p className="text-sm text-secondary">{description}</p> : null}
-          {change ? <Badge tone={tone}>{change}</Badge> : null}
+      <CardContent className="flex items-start justify-between gap-3 p-4">
+        <div className="space-y-1.5 min-w-0">
+          <p className="text-xs font-medium text-secondary">{title}</p>
+          <p className="text-2xl font-bold tracking-tight text-primary">{value}</p>
+          {description ? <p className="text-xs text-muted leading-normal truncate">{description}</p> : null}
+          {change ? <div className="pt-0.5"><Badge tone={tone}>{change}</Badge></div> : null}
         </div>
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-hover text-primary">
-          <Icon className="h-5 w-5" />
+        <div className="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-md border border-border bg-hover/40 text-secondary">
+          <Icon className="h-4 w-4" />
         </div>
       </CardContent>
     </Card>

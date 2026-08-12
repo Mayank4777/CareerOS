@@ -24,7 +24,10 @@ import type {
 import { normalizeChoiceValue } from "@/features/career-profile/utils/section-choice";
 import { useQuery } from "@tanstack/react-query";
 
-export function SectionResourcePage<TRecord extends SectionRecord>({ config }: SectionModulePageProps) {
+export function SectionResourcePage<TRecord extends SectionRecord>({
+  config,
+  topContent,
+}: SectionModulePageProps) {
   const [editorRecord, setEditorRecord] = useState<TRecord | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<TRecord | null>(null);
@@ -123,6 +126,8 @@ export function SectionResourcePage<TRecord extends SectionRecord>({ config }: S
           </Button>
         }
       />
+
+      {topContent}
 
       <SectionCard
         title={config.title}

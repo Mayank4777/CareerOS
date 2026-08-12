@@ -13,15 +13,15 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, breadcrumbs, actions, className }: PageHeaderProps) {
   return (
-    <header className={cn("flex flex-col gap-4 md:flex-row md:items-end md:justify-between", className)}>
-      <div className="space-y-2">
+    <header className={cn("flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-1", className)}>
+      <div className="space-y-1">
         {breadcrumbs ? <Breadcrumb items={breadcrumbs} /> : null}
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-primary md:text-3xl">{title}</h1>
-          {description ? <p className="max-w-3xl text-sm leading-6 text-secondary md:text-base">{description}</p> : null}
+          <h1 className="text-2xl font-bold tracking-tight text-primary sm:text-3xl">{title}</h1>
+          {description ? <p className="max-w-3xl text-sm sm:text-base text-secondary leading-relaxed">{description}</p> : null}
         </div>
       </div>
-      {actions ? <div className="flex flex-wrap items-center gap-3">{actions}</div> : null}
+      {actions ? <div className="flex flex-wrap items-center gap-3 shrink-0">{actions}</div> : null}
     </header>
   );
 }

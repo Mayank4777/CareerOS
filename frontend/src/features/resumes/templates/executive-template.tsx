@@ -1,167 +1,132 @@
 import type { ResumeTemplateProps } from "./types";
-import { getSectionRecords } from "./types";
+import { getNormalizedResumeData } from "./types";
 
-export function ExecutiveTemplate({
-  resume,
-  sections,
-  allSectionItems,
-  allSourceRecords,
-}: ResumeTemplateProps) {
-  // Sort sections by display order
-  const sortedSections = sections
-    .filter((s) => s.is_visible)
-    .slice()
-    .sort((a, b) => a.display_order - b.display_order);
+export function ExecutiveTemplate(props: ResumeTemplateProps) {
+  const data = getNormalizedResumeData(props);
+  const info = data.personal_info || {};
+  const summary = data.summary;
+  const sections = data.sections || [];
 
-  // Find personal information
-  const personalInfoSection = sections.find((s) => s.section_type === "personal_information");
-  const personalRecords = personalInfoSection
-    ? getSectionRecords(personalInfoSection, allSectionItems, allSourceRecords)
-    : [];
-  const primaryRecord = personalRecords[0];
-
-  // Divide sections into left sidebar and right body (as defined in Template 3)
-  const sidebarSectionTypes = ["skills", "languages", "certifications", "interests", "references", "education"];
-  const leftSections = sortedSections.filter((s) => sidebarSectionTypes.includes(s.section_type));
-  const rightSections = sortedSections.filter((s) => !sidebarSectionTypes.includes(s.section_type) && s.section_type !== "personal_information");
+  const mainSections = sections.filter((s: any) => ["experience", "projects"].includes(s.key));
+  const sideSections = sections.filter((s: any) => !["experience", "projects"].includes(s.key));
 
   return (
-    <div className="flex h-full bg-white text-[#111827] font-sans leading-relaxed text-[9px] overflow-hidden">
-      {/* 1. Left Sidebar Column (36% width, mimicking template 3 background) */}
-      <div className="w-[36%] bg-[#eef5fb] border-r border-[#d1d5db] p-5 flex flex-col space-y-4 overflow-y-auto shrink-0">
-        {/* Contact Info Area */}
-        {primaryRecord ? (
-          <div className="space-y-2 pb-3 border-b border-[#D1D5DB]">
-            <h2 className="text-[13.5px] font-extrabold text-[#111827] uppercase leading-tight">
-              {primaryRecord.title}
-            </h2>
-            {primaryRecord.subtitle ? (
-              <p className="text-[8.5px] font-bold text-slate-500 uppercase tracking-wider">
-                {primaryRecord.subtitle}
-              </p>
-            ) : null}
+    <div className="printable-resume flex min-h-full flex-col p-6 bg-white text-[#1f2937] font-sans text-[10px] leading-relaxed">
+      {/* Header Grid (Template 2 ex-header) */}
+      <div className="grid grid-cols-[1.6fr_1fr] gap-4 border-b-2 border-[#c7d9f1] pb-3 mb-4">
+        <div>
+          <h1 className="text-[24px] font-bold text-[#2a5ba5] tracking-tight leading-tight">
+            {info.full_name || props.resume.title}
+          </h1>
+          {info.headline ? (
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mt-1">
+              {info.headline}
+            </p>
+          ) : null}
+        </div>
 
-            {primaryRecord.meta?.length ? (
-              <div className="space-y-1.5 pt-2 text-[8px] text-slate-600 font-medium">
-                {primaryRecord.meta.map((val, idx) => (
-                  <p key={idx} className="break-all leading-normal">
-                    {val}
-                  </p>
+        {/* Executive Contact Card */}
+        <div className="bg-[#eef5ff] border border-[#d5e4f8] rounded-lg p-2.5 space-y-0.5 text-[9px] text-[#27496d]">
+          {info.email ? <p className="font-semibold">{info.email}</p> : null}
+          {info.phone ? <p>{info.phone}</p> : null}
+          {info.location ? <p>{info.location}</p> : null}
+          {info.linkedin ? <p className="text-[#1d4ed8] underline">{info.linkedin}</p> : null}
+          {info.github ? <p className="text-[#1d4ed8] underline">{info.github}</p> : null}
+        </div>
+      </div>
+
+      {/* 2-Column Layout Grid (Template 2 ex-grid) */}
+      <div className="grid grid-cols-[1.7fr_1fr] gap-5 flex-1">
+        {/* Main Column */}
+        <div className="space-y-4">
+          {summary ? (
+            <div className="space-y-1">
+              <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-[#2a5ba5] border-b-2 border-[#a9c4ea] pb-0.5">
+                Executive Summary
+              </h3>
+              <p className="text-[9.5px] text-slate-700 leading-relaxed text-justify">{summary}</p>
+            </div>
+          ) : null}
+
+          {mainSections.map((sec: any) => (
+            <div key={sec.key} className="space-y-2">
+              <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-[#2a5ba5] border-b-2 border-[#a9c4ea] pb-0.5">
+                {sec.title}
+              </h3>
+              <div className="space-y-3">
+                {sec.items?.map((item: any, idx: number) => (
+                  <div key={idx} className="space-y-1">
+                    <div className="flex justify-between items-baseline gap-2">
+                      <span className="font-bold text-slate-900 text-[10px]">
+                        {item.title}
+                      </span>
+                      {(item.start_date || item.end_date) && (
+                        <span className="text-[9px] text-slate-500 whitespace-nowrap font-medium">
+                          {item.start_date} {item.end_date ? `- ${item.end_date}` : ""}
+                        </span>
+                      )}
+                    </div>
+                    {item.company ? (
+                      <p className="text-[9px] text-[#2a5ba5] italic font-medium">{item.company}</p>
+                    ) : null}
+                    {item.bullets && item.bullets.length > 0 ? (
+                      <ul className="list-disc pl-4 text-[9px] text-slate-650 space-y-0.5">
+                        {item.bullets.map((b: string, i: number) => (
+                          <li key={i}>{b}</li>
+                        ))}
+                      </ul>
+                    ) : item.description ? (
+                      <p className="text-[9px] text-slate-600 leading-normal pl-2 border-l border-slate-200">
+                        {item.description}
+                      </p>
+                    ) : null}
+                  </div>
                 ))}
               </div>
-            ) : null}
-          </div>
-        ) : (
-          <div className="pb-3 border-b border-[#D1D5DB]">
-            <h2 className="text-[11px] font-extrabold text-[#111827] uppercase">{resume.title}</h2>
-            <p className="text-[8.5px] text-slate-400 uppercase tracking-widest mt-1">Executive CV</p>
-          </div>
-        )}
+            </div>
+          ))}
+        </div>
 
-        {/* Sidebar Sections */}
-        {leftSections.map((section) => {
-          const records = getSectionRecords(section, allSectionItems, allSourceRecords);
-          if (records.length === 0) return null;
-
-          return (
-            <div key={section.id} className="space-y-2 page-break-inside-avoid">
-              <h3 className="text-[9px] font-extrabold uppercase tracking-wider text-[#1F4E79] border-b border-[#D1D5DB] pb-0.5">
-                {section.title}
+        {/* Sidebar Column */}
+        <div className="bg-[#eef5ff] border border-[#d5e4f8] rounded-xl p-3.5 space-y-4 self-start">
+          {sideSections.map((sec: any) => (
+            <div key={sec.key} className="space-y-1.5">
+              <h3 className="text-[9.5px] font-bold uppercase tracking-wider text-[#2a5ba5] border-b border-[#a9c4ea] pb-0.5">
+                {sec.title}
               </h3>
               <div className="space-y-2">
-                {records.map((record) => {
-                  const isSkills = section.section_type === "skills";
-
-                  if (isSkills) {
+                {sec.items?.map((item: any, idx: number) => {
+                  if (sec.key === "skills") {
                     return (
-                      <div key={record.id} className="flex flex-wrap gap-1">
-                        {record.meta?.map((val) => (
-                          <span
-                            key={val}
-                            className="bg-white border border-[#D1D5DB] text-[8px] px-1.5 py-0.5 rounded text-slate-700 font-medium"
-                          >
-                            {val}
-                          </span>
-                        )) ?? (
-                          <span className="font-bold text-slate-800 text-[8.5px]">{record.title}</span>
-                        )}
+                      <div key={idx} className="space-y-1">
+                        <span className="font-bold text-slate-800 text-[9px] block">{item.category}:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {item.skills?.map((sk: string) => (
+                            <span key={sk} className="bg-white border border-[#c7d9f1] text-slate-700 px-1.5 py-0.5 rounded text-[8.5px] font-medium">
+                              {sk}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     );
                   }
 
                   return (
-                    <div key={record.id} className="space-y-0.5">
-                      <p className="font-bold text-slate-800 leading-tight">{record.title}</p>
-                      {record.subtitle ? (
-                        <p className="text-[8px] text-slate-500 italic">{record.subtitle}</p>
+                    <div key={idx} className="space-y-0.5">
+                      <p className="font-bold text-slate-800 text-[9px]">{item.institution || item.name || item.title}</p>
+                      {item.degree ? (
+                        <p className="text-[8.5px] text-slate-600 italic">{item.degree} ({item.field_of_study})</p>
                       ) : null}
-                      {record.description ? (
-                        <p className="text-[8px] text-slate-500 leading-normal">{record.description}</p>
+                      {item.start_date || item.end_date ? (
+                        <p className="text-[8px] text-[#27496d] font-semibold">{item.start_date} - {item.end_date}</p>
                       ) : null}
                     </div>
                   );
                 })}
               </div>
             </div>
-          );
-        })}
-      </div>
-
-      {/* 2. Right Main Column (64% width, white background) */}
-      <div className="w-[64%] p-5 flex flex-col space-y-4 overflow-y-auto">
-        {/* Executive Profile Summary Statement */}
-        {primaryRecord?.description ? (
-          <div className="space-y-1.5 page-break-inside-avoid">
-            <h3 className="text-[9px] font-extrabold uppercase tracking-wider text-[#1F4E79] border-b border-[#D1D5DB] pb-0.5">
-              Professional Summary
-            </h3>
-            <p className="text-[9px] text-slate-650 leading-relaxed text-justify">
-              {primaryRecord.description}
-            </p>
-          </div>
-        ) : null}
-
-        {/* Right Columns Sections */}
-        {rightSections.map((section) => {
-          const records = getSectionRecords(section, allSectionItems, allSourceRecords);
-          if (records.length === 0) return null;
-
-          return (
-            <div key={section.id} className="space-y-2 page-break-inside-avoid">
-              <h3 className="text-[9px] font-extrabold uppercase tracking-wider text-[#1F4E79] border-b border-[#D1D5DB] pb-0.5">
-                {section.title}
-              </h3>
-              <div className="space-y-3">
-                {records.map((record) => (
-                  <div key={record.id} className="space-y-1">
-                    <div className="flex justify-between items-baseline gap-4">
-                      <span className="text-[9.5px] font-bold text-slate-900">
-                        {record.title}
-                      </span>
-                      {record.meta && record.meta.length > 0 ? (
-                        <span className="text-[8px] font-semibold text-slate-500 text-right shrink-0">
-                          {record.meta[record.meta.length - 1]}
-                        </span>
-                      ) : null}
-                    </div>
-
-                    {record.subtitle ? (
-                      <p className="text-[8.5px] font-semibold text-slate-500 italic">
-                        {record.subtitle}
-                      </p>
-                    ) : null}
-
-                    {record.description ? (
-                      <div className="text-[8.5px] text-slate-600 leading-normal pl-3 border-l border-slate-100 whitespace-pre-line text-justify">
-                        {record.description}
-                      </div>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
     </div>
   );
