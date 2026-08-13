@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     "apps.notifications.apps.NotificationsConfig",
     "apps.ai_coach.apps.AICoachConfig",
     "apps.user_settings.apps.UserSettingsConfig",
+    "ai.apps.AIConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -229,3 +230,10 @@ CELERY_TIMEZONE = TIME_ZONE
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "phi3:latest")
 OLLAMA_TIMEOUT = int(os.environ.get("OLLAMA_TIMEOUT", "300"))
+
+HF_API_TOKEN = os.environ.get("HF_API_TOKEN", "")
+_default_ai_provider = "huggingface" if HF_API_TOKEN else "ollama"
+AI_PROVIDER = os.environ.get("AI_PROVIDER", _default_ai_provider).lower()
+AI_MODEL = os.environ.get("AI_MODEL", "meta-llama/Llama-3.2-3B-Instruct")
+HF_MODEL = os.environ.get("HF_MODEL", AI_MODEL)
+

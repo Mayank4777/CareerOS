@@ -2,66 +2,66 @@ from __future__ import annotations
 
 from typing import Any
 
-from apps.career_profile.models import CareerProfile
+from ai.context.builder import UserContextBuilder
+from ai.orchestrator.orchestrator import AIOrchestrator
 
-from .client import OllamaClient
 from .models import AIHistory
 from .prompts import get_prompt_builder
 
 
 class AICoachService:
-    """Service layer for AI features, coordinating prompt builders, Ollama client, and history logging."""
+    """Service layer for AI features delegating through centralized AIOrchestrator."""
 
-    def __init__(self, ollama_client: OllamaClient | None = None) -> None:
-        self.ollama_client = ollama_client or OllamaClient()
+    def __init__(
+        self,
+        orchestrator: AIOrchestrator | None = None,
+        context_builder: UserContextBuilder | None = None,
+    ) -> None:
+        self.orchestrator = orchestrator or AIOrchestrator()
+        self.context_builder = context_builder or UserContextBuilder()
 
     def chat(self, user: Any, feature: str, prompt: str) -> dict[str, Any]:
-        """Generic AI chat endpoint powered by local Ollama."""
-        profile, _ = CareerProfile.objects.get_or_create(user=user)
-        user_name = f"{profile.first_name} {profile.last_name}".strip()
-        user_skills = list(profile.skills.values_list("name", flat=True))
-
+        """Generic AI chat endpoint delegating through AIOrchestrator."""
+        user_context = self.context_builder.build_user_context(user)
+        skills = user_context.get("skills", [])
         context = {
-            "candidate_name": user_name or user.email,
-            "headline": profile.headline or "",
-            "skills": ", ".join(user_skills) if user_skills else "",
-            "summary": profile.summary or "",
+            "candidate_name": user_context.get("candidate_name", ""),
+            "headline": user_context.get("headline", ""),
+            "skills": ", ".join(skills) if isinstance(skills, list) else str(skills),
+            "summary": user_context.get("summary", ""),
         }
 
         builder = get_prompt_builder(feature)
         system_prompt, user_prompt = builder.build(prompt, context=context)
 
-        result = self.ollama_client.generate(prompt=user_prompt, system=system_prompt)
-
-        response_text = result["response"]
-        model_used = result["model"]
-        prompt_tokens = result["prompt_tokens"]
-        completion_tokens = result["completion_tokens"]
-        total_tokens = result["total_tokens"]
+        ai_response = self.orchestrator.generate(
+            prompt=user_prompt,
+            system_prompt=system_prompt,
+        )
 
         history = AIHistory.objects.create(
             user=user,
             feature=feature,
-            provider="ollama",
-            model=model_used,
-            prompt_tokens=prompt_tokens,
-            completion_tokens=completion_tokens,
-            total_tokens=total_tokens,
+            provider=ai_response.provider_name,
+            model=ai_response.model_name,
+            prompt_tokens=ai_response.prompt_tokens,
+            completion_tokens=ai_response.completion_tokens,
+            total_tokens=ai_response.total_tokens,
             response_data={
                 "prompt": prompt,
-                "response": response_text,
+                "response": ai_response.content,
                 "feature": feature,
             },
         )
 
         return {
             "feature": feature,
-            "model": model_used,
-            "response": response_text,
+            "model": ai_response.model_name,
+            "response": ai_response.content,
             "tokens": {
-                "prompt_tokens": prompt_tokens,
-                "completion_tokens": completion_tokens,
-                "total_tokens": total_tokens,
+                "prompt_tokens": ai_response.prompt_tokens,
+                "completion_tokens": ai_response.completion_tokens,
+                "total_tokens": ai_response.total_tokens,
             },
             "history_id": str(history.id),
         }

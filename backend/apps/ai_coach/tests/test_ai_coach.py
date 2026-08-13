@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from ai.providers import AIResponse
 from apps.ai_coach.models import AIHistory
 
 User = get_user_model()
@@ -19,15 +20,16 @@ class AICoachAPITestCase(APITestCase):
         )
         self.client.force_authenticate(user=self.user)
 
-    @patch("apps.ai_coach.client.OllamaClient.generate")
+    @patch("ai.orchestrator.orchestrator.AIOrchestrator.generate")
     def test_generate_cover_letter(self, mock_generate):
-        mock_generate.return_value = {
-            "response": "Dear Hiring Manager at Google, I am writing to express my interest in the Staff Software Engineer position.",
-            "model": "phi3:latest",
-            "prompt_tokens": 100,
-            "completion_tokens": 150,
-            "total_tokens": 250,
-        }
+        mock_generate.return_value = AIResponse(
+            content="Dear Hiring Manager at Google, I am writing to express my interest in the Staff Software Engineer position.",
+            provider_name="ollama",
+            model_name="phi3:latest",
+            prompt_tokens=100,
+            completion_tokens=150,
+            total_tokens=250,
+        )
 
         payload = {
             "company_name": "Google",
@@ -40,15 +42,16 @@ class AICoachAPITestCase(APITestCase):
         self.assertIn("Google", response.data["data"]["response"])
         self.assertEqual(AIHistory.objects.filter(user=self.user, feature="cover_letter").count(), 1)
 
-    @patch("apps.ai_coach.client.OllamaClient.generate")
+    @patch("ai.orchestrator.orchestrator.AIOrchestrator.generate")
     def test_skill_gap_analysis(self, mock_generate):
-        mock_generate.return_value = {
-            "response": "Readiness Score: 85%. Missing skills: Kubernetes, GraphQL.",
-            "model": "phi3:latest",
-            "prompt_tokens": 80,
-            "completion_tokens": 120,
-            "total_tokens": 200,
-        }
+        mock_generate.return_value = AIResponse(
+            content="Readiness Score: 85%. Missing skills: Kubernetes, GraphQL.",
+            provider_name="ollama",
+            model_name="phi3:latest",
+            prompt_tokens=80,
+            completion_tokens=120,
+            total_tokens=200,
+        )
 
         payload = {
             "target_role": "Backend Lead",
@@ -58,15 +61,16 @@ class AICoachAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["data"]["feature"], "ats_review")
 
-    @patch("apps.ai_coach.client.OllamaClient.generate")
+    @patch("ai.orchestrator.orchestrator.AIOrchestrator.generate")
     def test_career_advice(self, mock_generate):
-        mock_generate.return_value = {
-            "response": "Focus on high-scale architecture and team leadership.",
-            "model": "phi3:latest",
-            "prompt_tokens": 70,
-            "completion_tokens": 110,
-            "total_tokens": 180,
-        }
+        mock_generate.return_value = AIResponse(
+            content="Focus on high-scale architecture and team leadership.",
+            provider_name="ollama",
+            model_name="phi3:latest",
+            prompt_tokens=70,
+            completion_tokens=110,
+            total_tokens=180,
+        )
 
         payload = {
             "target_role": "Engineering Manager",
@@ -76,15 +80,16 @@ class AICoachAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("architecture", response.data["data"]["response"])
 
-    @patch("apps.ai_coach.client.OllamaClient.generate")
+    @patch("ai.orchestrator.orchestrator.AIOrchestrator.generate")
     def test_job_match(self, mock_generate):
-        mock_generate.return_value = {
-            "response": "High match score of 90% for Stripe Fullstack Engineer position.",
-            "model": "phi3:latest",
-            "prompt_tokens": 90,
-            "completion_tokens": 130,
-            "total_tokens": 220,
-        }
+        mock_generate.return_value = AIResponse(
+            content="High match score of 90% for Stripe Fullstack Engineer position.",
+            provider_name="ollama",
+            model_name="phi3:latest",
+            prompt_tokens=90,
+            completion_tokens=130,
+            total_tokens=220,
+        )
 
         payload = {
             "job_title": "Fullstack Engineer",

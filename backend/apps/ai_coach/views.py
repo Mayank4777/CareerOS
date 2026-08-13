@@ -6,6 +6,8 @@ from rest_framework.views import APIView
 
 from apps.common.responses import error_response, success_response
 
+from ai.providers.base import AIProviderError
+
 from .exceptions import OllamaError
 from .serializers import (
     AIChatSerializer,
@@ -19,7 +21,7 @@ from .services import AICoachService
 
 
 class AIChatAPIView(APIView):
-    """Generic AI Chat API endpoint powered by local Ollama."""
+    """Generic AI Chat API endpoint powered by centralized AI Orchestrator."""
 
     permission_classes = [IsAuthenticated]
     serializer_class = AIChatSerializer
@@ -40,7 +42,7 @@ class AIChatAPIView(APIView):
                 message="AI response generated successfully.",
                 data=result,
             )
-        except OllamaError as exc:
+        except (AIProviderError, OllamaError) as exc:
             return error_response(
                 message=exc.message,
                 status_code=exc.status_code,
@@ -73,7 +75,7 @@ class CoverLetterAPIView(APIView):
                 message="Cover letter generated successfully.",
                 data=result,
             )
-        except OllamaError as exc:
+        except (AIProviderError, OllamaError) as exc:
             return error_response(message=exc.message, status_code=exc.status_code)
 
 
@@ -96,7 +98,7 @@ class SkillGapAPIView(APIView):
                 message="Skill gap analysis complete.",
                 data=result,
             )
-        except OllamaError as exc:
+        except (AIProviderError, OllamaError) as exc:
             return error_response(message=exc.message, status_code=exc.status_code)
 
 
@@ -119,7 +121,7 @@ class CareerAdviceAPIView(APIView):
                 message="Career recommendations generated.",
                 data=result,
             )
-        except OllamaError as exc:
+        except (AIProviderError, OllamaError) as exc:
             return error_response(message=exc.message, status_code=exc.status_code)
 
 
@@ -143,7 +145,7 @@ class JobMatchAPIView(APIView):
                 message="Job match calculation complete.",
                 data=result,
             )
-        except OllamaError as exc:
+        except (AIProviderError, OllamaError) as exc:
             return error_response(message=exc.message, status_code=exc.status_code)
 
 
