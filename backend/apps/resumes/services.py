@@ -8,7 +8,7 @@ from rest_framework.exceptions import NotFound
 from apps.career_profile.selectors import get_profile_by_user
 
 from .generation import ResumeGenerationEngine
-from .models import Resume, ResumeVersion
+from .models import Resume, ResumeAnalysis, ResumeVersion
 from .review import ResumeReviewEngine
 from .selectors import get_resume, list_resumes
 
@@ -92,7 +92,15 @@ class ResumeService:
     def review_resume(self, *, user, resume_id) -> dict[str, Any]:
         resume = self.retrieve_resume(user=user, resume_id=resume_id)
         engine = ResumeReviewEngine(resume=resume)
-        return engine.analyze()
+        report = engine.analyze()
+        ResumeAnalysis.objects.create(
+            resume=resume,
+            score=report.get("overallScore", 0),
+            strengths=report.get("strengths", []),
+            weaknesses=report.get("improvements", []),
+            recommendations=report.get("atsSuggestions", []),
+        )
+        return report
 
     def apply_suggestion(self, *, user, resume_id, suggestion_data: dict[str, Any]) -> Resume:
         resume = self.retrieve_resume(user=user, resume_id=resume_id)

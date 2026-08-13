@@ -80,3 +80,21 @@ class InterviewAPITestCase(APITestCase):
         response = self.client.delete(f"/api/v1/interviews/{interview.id}/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Interview.objects.filter(id=interview.id).count(), 0)
+
+    def test_interview_ai_context_persistence(self):
+        payload = {
+            "application": str(self.application.id),
+            "round": "System Architecture",
+            "interview_type": "system_design",
+            "scheduled_at": timezone.now().isoformat(),
+            "status": "scheduled",
+            "ai_prep_data": {"topics": ["Microservices", "Caching"], "suggested_questions": ["How do you handle data consistency?"]},
+            "prep_notes": "Review Redis caching strategies.",
+            "reflection": "Answered caching questions well, work on rate limiting details.",
+        }
+        response = self.client.post("/api/v1/interviews/", payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["data"]["ai_prep_data"]["topics"], ["Microservices", "Caching"])
+        self.assertEqual(response.data["data"]["prep_notes"], "Review Redis caching strategies.")
+        self.assertEqual(response.data["data"]["reflection"], "Answered caching questions well, work on rate limiting details.")
+

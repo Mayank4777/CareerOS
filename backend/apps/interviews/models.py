@@ -46,6 +46,9 @@ class Interview(models.Model):
     interviewer_name = models.CharField(max_length=255, blank=True, default="")
     notes = models.TextField(blank=True, default="")
     feedback = models.TextField(blank=True, default="")
+    ai_prep_data = models.JSONField(default=dict, blank=True)
+    prep_notes = models.TextField(blank=True, default="")
+    reflection = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

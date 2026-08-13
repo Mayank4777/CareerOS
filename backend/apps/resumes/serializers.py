@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from .models import Resume, ResumeVersion
+from .models import Resume, ResumeAnalysis, ResumeVersion
 from .validators import validate_resume_title
 
 
@@ -63,4 +63,20 @@ class ApplySuggestionSerializer(serializers.Serializer):
     section_key = serializers.CharField()
     original_text = serializers.CharField()
     suggested_text = serializers.CharField()
+
+
+class ResumeAnalysisSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ResumeAnalysis
+        fields = (
+            "id",
+            "resume",
+            "score",
+            "strengths",
+            "weaknesses",
+            "recommendations",
+            "analyzed_at",
+        )
+        read_only_fields = ("id", "analyzed_at")
+
 

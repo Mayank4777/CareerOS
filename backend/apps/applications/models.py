@@ -5,6 +5,7 @@ import uuid
 from django.db import models
 
 from apps.career_profile.models import CareerProfile
+from apps.jobs.models import SavedJob
 from apps.resumes.models import Resume
 
 
@@ -26,6 +27,13 @@ class Application(models.Model):
     )
     resume = models.ForeignKey(
         Resume,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="applications",
+    )
+    job = models.ForeignKey(
+        SavedJob,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

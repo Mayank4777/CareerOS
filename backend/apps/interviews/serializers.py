@@ -24,6 +24,9 @@ class InterviewSerializer(serializers.ModelSerializer):
             "interviewer_name",
             "notes",
             "feedback",
+            "ai_prep_data",
+            "prep_notes",
+            "reflection",
             "created_at",
             "updated_at",
         ]

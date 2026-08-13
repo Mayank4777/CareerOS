@@ -69,3 +69,31 @@ class ApplicationAPITestCase(APITestCase):
         response = self.client.delete(f"/api/v1/applications/{app.id}/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Application.objects.filter(id=app.id).count(), 0)
+
+    def test_application_with_saved_job_relationship(self):
+        from apps.jobs.models import SavedJob
+        job = SavedJob.objects.create(
+            career_profile=self.profile,
+            company="Apple",
+            title="iOS Engineer",
+        )
+        payload = {
+            "company": "Apple",
+            "position": "iOS Engineer",
+            "status": "applied",
+            "job": str(job.id),
+        }
+        response = self.client.post("/api/v1/applications/", payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(str(response.data["data"]["job"]), str(job.id))
+
+        # Application without saved job works seamlessly
+        payload_no_job = {
+            "company": "Netflix",
+            "position": "Backend Engineer",
+            "status": "applied",
+        }
+        resp_no_job = self.client.post("/api/v1/applications/", payload_no_job, format="json")
+        self.assertEqual(resp_no_job.status_code, status.HTTP_201_CREATED)
+        self.assertIsNone(resp_no_job.data["data"]["job"])
+

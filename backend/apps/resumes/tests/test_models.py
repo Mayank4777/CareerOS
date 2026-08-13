@@ -6,7 +6,7 @@ from django.utils import timezone
 from apps.accounts.models import User
 from apps.career_profile.models import CareerProfile
 
-from ..models import Resume, ResumeStatus
+from ..models import Resume, ResumeAnalysis, ResumeStatus
 
 
 class ResumeModelTests(TestCase):
@@ -36,4 +36,19 @@ class ResumeModelTests(TestCase):
         resume = Resume.objects.create(career_profile=self.profile, title="Backend Resume")
 
         self.assertEqual(resume.status, ResumeStatus.DRAFT)
+
+    def test_create_resume_analysis(self) -> None:
+        resume = Resume.objects.create(career_profile=self.profile, title="Backend Resume")
+        analysis = ResumeAnalysis.objects.create(
+            resume=resume,
+            score=85,
+            strengths=["Clear summary", "Good skill list"],
+            weaknesses=["Missing metrics in bullet points"],
+            recommendations=["Add quantitative results"],
+        )
+        self.assertEqual(resume.analyses.count(), 1)
+        self.assertEqual(analysis.score, 85)
+        self.assertIn("Clear summary", analysis.strengths)
+        self.assertTrue(str(analysis).startswith("Analysis for Backend Resume"))
+
 

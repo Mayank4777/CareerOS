@@ -72,3 +72,30 @@ class ResumeVersion(models.Model):
         return f"{self.resume.title} ({self.version_number})"
 
 
+class ResumeAnalysis(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    resume = models.ForeignKey(
+        Resume,
+        on_delete=models.CASCADE,
+        related_name="analyses",
+    )
+    score = models.PositiveIntegerField(default=0)
+    strengths = models.JSONField(default=list, blank=True)
+    weaknesses = models.JSONField(default=list, blank=True)
+    recommendations = models.JSONField(default=list, blank=True)
+    analyzed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "resume_analysis"
+        verbose_name = "resume analysis"
+        verbose_name_plural = "resume analyses"
+        ordering = ["-analyzed_at"]
+        indexes = [
+            models.Index(fields=["resume", "-analyzed_at"], name="resume_an_analyzed_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"Analysis for {self.resume.title} (Score: {self.score})"
+
+
+
