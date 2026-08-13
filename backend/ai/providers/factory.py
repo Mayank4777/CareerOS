@@ -6,6 +6,7 @@ from typing import Type
 from django.conf import settings
 
 from .base import AIProviderConfigError, BaseAIProvider
+from .gemini import GeminiProvider
 from .huggingface import HuggingFaceProvider
 from .ollama import OllamaProvider
 
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 _PROVIDER_REGISTRY: dict[str, Type[BaseAIProvider]] = {
     "huggingface": HuggingFaceProvider,
+    "gemini": GeminiProvider,
     "ollama": OllamaProvider,
 }
 
@@ -34,6 +36,13 @@ def get_provider(provider_name: str | None = None, **kwargs) -> BaseAIProvider:
             raise AIProviderConfigError(
                 "Hugging Face API token (HF_API_TOKEN) is not configured. "
                 "Set HF_API_TOKEN in environment settings or switch AI_PROVIDER."
+            )
+    elif name == "gemini":
+        gemini_key = kwargs.get("api_key") or getattr(settings, "GEMINI_API_KEY", "")
+        if not gemini_key:
+            raise AIProviderConfigError(
+                "Gemini API key (GEMINI_API_KEY) is not configured. "
+                "Set GEMINI_API_KEY in environment settings."
             )
 
     return provider_cls(**kwargs)

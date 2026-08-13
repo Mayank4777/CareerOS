@@ -10,6 +10,7 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useSavedJobs, useCreateSavedJob, useUpdateSavedJob, useDeleteSavedJob } from "../hooks/use-jobs";
 import { SavedJobCard } from "../components/saved-job-card";
 import { SaveJobModal } from "../components/save-job-modal";
+import { JobMatchCard } from "@/features/ai-coach/components/job-match-card";
 import type { SavedJob, SavedJobFormValues } from "../types";
 
 export function SavedJobsPage() {
@@ -18,6 +19,7 @@ export function SavedJobsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<SavedJob | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SavedJob | null>(null);
+  const [matchJobId, setMatchJobId] = useState<string | null>(null);
 
   const { data: jobs, isLoading, isError, refetch } = useSavedJobs({ search, status: statusFilter });
   const createMutation = useCreateSavedJob();
@@ -59,6 +61,13 @@ export function SavedJobsPage() {
           </Button>
         }
       />
+
+      {matchJobId && (
+        <JobMatchCard
+          initialJobId={matchJobId}
+          onClose={() => setMatchJobId(null)}
+        />
+      )}
 
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-hover/50 p-4 rounded-xl border border-border">
         <div className="relative flex-1 w-full">
@@ -114,6 +123,7 @@ export function SavedJobsPage() {
                 setDeleteTarget(target);
               }}
               onStatusChange={handleStatusChange}
+              onCheckMatch={(j) => setMatchJobId(j.id)}
             />
           ))}
         </div>

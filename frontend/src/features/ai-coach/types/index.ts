@@ -40,12 +40,15 @@ export interface CareerAdviceResponse {
 }
 
 export interface JobMatchResponse {
-  jobTitle: string;
-  companyName: string;
+  id: string;
+  jobId: string;
+  resumeId: string;
   matchScore: number;
   strengths: string[];
+  missingSkills: string[];
   gaps: string[];
-  recommendation: string;
+  recommendations: string[];
+  analyzedAt: string;
 }
 
 export interface AIHistoryItem {

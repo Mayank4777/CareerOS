@@ -28,7 +28,7 @@ class HuggingFaceProvider(BaseAIProvider):
         model: str | None = None,
         timeout: int | None = None,
     ) -> None:
-        self.api_token = api_token or getattr(settings, "HF_API_TOKEN", "")
+        self.api_token = getattr(settings, "HF_API_TOKEN", "") if api_token is None else api_token
         selected_model = model or getattr(settings, "HF_MODEL", getattr(settings, "AI_MODEL", "meta-llama/Llama-3.2-3B-Instruct"))
         super().__init__(model=selected_model, timeout=timeout)
 

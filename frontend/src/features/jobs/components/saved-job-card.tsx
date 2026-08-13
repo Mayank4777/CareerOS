@@ -1,4 +1,4 @@
-import { ExternalLink, MapPin, DollarSign, Trash2, Edit3, Briefcase } from "lucide-react";
+import { ExternalLink, MapPin, DollarSign, Trash2, Edit3, Briefcase, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,9 +9,10 @@ interface SavedJobCardProps {
   onEdit: (job: SavedJob) => void;
   onDelete: (jobId: string) => void;
   onStatusChange?: (jobId: string, status: SavedJob["status"]) => void;
+  onCheckMatch?: (job: SavedJob) => void;
 }
 
-export function SavedJobCard({ job, onEdit, onDelete, onStatusChange }: SavedJobCardProps) {
+export function SavedJobCard({ job, onEdit, onDelete, onStatusChange, onCheckMatch }: SavedJobCardProps) {
   const getBadgeTone = (status: SavedJob["status"]) => {
     switch (status) {
       case "applied":
@@ -75,6 +76,17 @@ export function SavedJobCard({ job, onEdit, onDelete, onStatusChange }: SavedJob
         </div>
 
         <div className="flex items-center gap-2">
+          {onCheckMatch && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="h-8 text-xs flex items-center gap-1"
+              onClick={() => onCheckMatch(job)}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+              Match
+            </Button>
+          )}
           {onStatusChange && job.status === "saved" && (
             <Button
               variant="secondary"

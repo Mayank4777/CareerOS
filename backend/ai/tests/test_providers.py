@@ -10,6 +10,7 @@ from ai.providers import (
     AIProviderConnectionError,
     AIProviderResponseError,
     AIProviderTimeoutError,
+    GeminiProvider,
     HuggingFaceProvider,
     OllamaProvider,
 )
@@ -93,3 +94,51 @@ class OllamaProviderTests(TestCase):
         provider = OllamaProvider()
         with self.assertRaises(AIProviderConnectionError):
             provider.generate("Test prompt")
+
+
+class GeminiProviderTests(TestCase):
+    def test_missing_api_key_raises_config_error(self) -> None:
+        provider = GeminiProvider(api_key="", model="gemini-3.5-flash")
+        with self.assertRaises(AIProviderConfigError):
+            provider.generate("Test prompt")
+
+    @patch("requests.post")
+    def test_gemini_success(self, mock_post: MagicMock) -> None:
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {"text": "Gemini generated text"}
+                        ]
+                    }
+                }
+            ],
+            "usageMetadata": {
+                "promptTokenCount": 15,
+                "candidatesTokenCount": 25,
+            },
+        }
+        mock_post.return_value = mock_response
+
+        provider = GeminiProvider(api_key="valid-key", model="gemini-3.5-flash")
+        res = provider.generate(prompt="Hello Gemini", system_prompt="System instructions")
+
+        self.assertEqual(res.content, "Gemini generated text")
+        self.assertEqual(res.provider_name, "gemini")
+        self.assertEqual(res.model_name, "gemini-3.5-flash")
+        self.assertEqual(res.prompt_tokens, 15)
+        self.assertEqual(res.completion_tokens, 25)
+
+    @patch("requests.post")
+    def test_gemini_auth_failure(self, mock_post: MagicMock) -> None:
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+        mock_post.return_value = mock_response
+
+        provider = GeminiProvider(api_key="invalid-key")
+        with self.assertRaises(AIProviderAuthError):
+            provider.generate("Test prompt")
+

@@ -82,19 +82,36 @@ class AICoachAPITestCase(APITestCase):
 
     @patch("ai.orchestrator.orchestrator.AIOrchestrator.generate")
     def test_job_match(self, mock_generate):
+        from apps.career_profile.models import CareerProfile
+        from apps.jobs.models import SavedJob
+        from apps.resumes.models import Resume
+
+        profile = CareerProfile.objects.create(user=self.user, first_name="Test", last_name="User")
+        job = SavedJob.objects.create(career_profile=profile, title="Fullstack Engineer", company="Stripe")
+        resume = Resume.objects.create(career_profile=profile, title="Main Resume")
+
         mock_generate.return_value = AIResponse(
-            content="High match score of 90% for Stripe Fullstack Engineer position.",
+            content='{"match_score": 90, "strengths": ["Fullstack"], "missing_skills": [], "gaps": [], "recommendations": []}',
             provider_name="ollama",
             model_name="phi3:latest",
             prompt_tokens=90,
             completion_tokens=130,
             total_tokens=220,
+            raw_response={
+                "parsed": {
+                    "match_score": 90,
+                    "strengths": ["Fullstack"],
+                    "missing_skills": [],
+                    "gaps": [],
+                    "recommendations": [],
+                }
+            },
         )
 
         payload = {
-            "job_title": "Fullstack Engineer",
-            "company_name": "Stripe",
+            "job_id": str(job.id),
+            "resume_id": str(resume.id),
         }
         response = self.client.post("/api/v1/ai/job-match/", payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["data"]["feature"], "job_match")
+        self.assertEqual(response.data["data"]["match_score"], 90)

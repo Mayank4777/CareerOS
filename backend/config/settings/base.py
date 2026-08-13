@@ -232,8 +232,13 @@ OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "phi3:latest")
 OLLAMA_TIMEOUT = int(os.environ.get("OLLAMA_TIMEOUT", "300"))
 
 HF_API_TOKEN = os.environ.get("HF_API_TOKEN", "")
+HF_MODEL = os.environ.get("HF_MODEL", os.environ.get("AI_MODEL", "Qwen/Qwen2.5-7B-Instruct"))
+
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash")
+
+AI_PROVIDER_CHAIN = _list("AI_PROVIDER_CHAIN", "huggingface,gemini,ollama")
+
 _default_ai_provider = "huggingface" if HF_API_TOKEN else "ollama"
 AI_PROVIDER = os.environ.get("AI_PROVIDER", _default_ai_provider).lower()
-AI_MODEL = os.environ.get("AI_MODEL", "meta-llama/Llama-3.2-3B-Instruct")
-HF_MODEL = os.environ.get("HF_MODEL", AI_MODEL)
 

@@ -6,13 +6,13 @@ from typing import Any
 from django.conf import settings
 import requests
 
-from apps.ai_coach.exceptions import (
-    OllamaConnectionError,
-    OllamaInvalidResponseError,
-    OllamaModelNotFoundError,
-    OllamaTimeoutError,
+from .base import (
+    AIProviderConnectionError,
+    AIProviderResponseError,
+    AIProviderTimeoutError,
+    AIResponse,
+    BaseAIProvider,
 )
-from .base import AIResponse, BaseAIProvider
 
 logger = logging.getLogger(__name__)
 
@@ -45,31 +45,31 @@ class OllamaProvider(BaseAIProvider):
             response = requests.post(endpoint, json=payload, timeout=self.timeout)
         except requests.exceptions.Timeout as exc:
             logger.error("Ollama request timed out after %ss: %s", self.timeout, exc)
-            raise OllamaTimeoutError(f"Ollama request timed out after {self.timeout} seconds.") from exc
+            raise AIProviderTimeoutError(f"Ollama request timed out after {self.timeout} seconds.") from exc
         except requests.exceptions.ConnectionError as exc:
             logger.error("Failed to connect to Ollama at %s: %s", self.url, exc)
-            raise OllamaConnectionError(f"Could not connect to local Ollama server at {self.url}. Ensure Ollama is running.") from exc
+            raise AIProviderConnectionError(f"Could not connect to local Ollama server at {self.url}. Ensure Ollama is running.") from exc
         except requests.exceptions.RequestException as exc:
             logger.error("Ollama HTTP request error: %s", exc)
-            raise OllamaConnectionError(f"Ollama communication error: {exc}") from exc
+            raise AIProviderConnectionError(f"Ollama communication error: {exc}") from exc
 
         if response.status_code == 404:
             logger.error("Ollama model '%s' not found on server", active_model)
-            raise OllamaModelNotFoundError(f"Model '{active_model}' was not found on local Ollama server. Run 'ollama pull {active_model}'.")
+            raise AIProviderResponseError(f"Model '{active_model}' was not found on local Ollama server. Run 'ollama pull {active_model}'.", status_code=404)
 
         if response.status_code != 200:
             logger.error("Ollama returned HTTP error status %s: %s", response.status_code, response.text)
-            raise OllamaInvalidResponseError(f"Ollama server returned error status {response.status_code}.")
+            raise AIProviderResponseError(f"Ollama server returned error status {response.status_code}.", status_code=response.status_code)
 
         try:
             data = response.json()
         except ValueError as exc:
             logger.error("Failed to parse JSON response from Ollama: %s", exc)
-            raise OllamaInvalidResponseError("Ollama response was not valid JSON.") from exc
+            raise AIProviderResponseError("Ollama response was not valid JSON.", status_code=502) from exc
 
         if not isinstance(data, dict) or "response" not in data:
             logger.error("Ollama response missing required 'response' field: %s", data)
-            raise OllamaInvalidResponseError("Ollama response structure was invalid.")
+            raise AIProviderResponseError("Ollama response structure was invalid.", status_code=502)
 
         prompt_eval_count = data.get("prompt_eval_count", 0) or 0
         eval_count = data.get("eval_count", 0) or 0

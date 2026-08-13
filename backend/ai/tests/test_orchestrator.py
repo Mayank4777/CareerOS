@@ -13,7 +13,7 @@ class AIOrchestratorTests(TestCase):
         self.orchestrator = AIOrchestrator()
 
     @patch("ai.orchestrator.orchestrator.get_provider")
-    def test_orchestrator_delegates_to_provider(self, mock_get_provider: MagicMock) -> None:
+    def test_orchestrator_delegates_to_explicit_provider(self, mock_get_provider: MagicMock) -> None:
         mock_provider = MagicMock()
         mock_provider.generate.return_value = AIResponse(
             content="Generated answer",
@@ -35,15 +35,13 @@ class AIOrchestratorTests(TestCase):
             model=None,
         )
 
-    @patch("ai.orchestrator.orchestrator.get_provider")
-    def test_orchestrator_with_response_parser(self, mock_get_provider: MagicMock) -> None:
-        mock_provider = MagicMock()
-        mock_provider.generate.return_value = AIResponse(
+    @patch("ai.providers.router.AIProviderRouter.generate")
+    def test_orchestrator_with_response_parser(self, mock_router_generate: MagicMock) -> None:
+        mock_router_generate.return_value = AIResponse(
             content='{"score": 90, "status": "ok"}',
             provider_name="ollama",
             model_name="phi3:latest",
         )
-        mock_get_provider.return_value = mock_provider
 
         parser = JSONResponseParser(required_fields=["score", "status"])
         res = self.orchestrator.generate(prompt="Test", parser=parser)

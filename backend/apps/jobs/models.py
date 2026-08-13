@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from apps.career_profile.models import CareerProfile
@@ -43,3 +44,35 @@ class SavedJob(models.Model):
 
     def __str__(self) -> str:
         return f"{self.title} at {self.company}"
+
+
+class JobMatchAnalysis(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    job = models.ForeignKey(
+        SavedJob,
+        on_delete=models.CASCADE,
+        related_name="match_analyses",
+    )
+    resume = models.ForeignKey(
+        "resumes.Resume",
+        on_delete=models.CASCADE,
+        related_name="job_matches",
+    )
+    match_score = models.PositiveIntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(100)]
+    )
+    strengths = models.JSONField(default=list, blank=True)
+    missing_skills = models.JSONField(default=list, blank=True)
+    gaps = models.JSONField(default=list, blank=True)
+    recommendations = models.JSONField(default=list, blank=True)
+    analyzed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "job_match_analysis"
+        verbose_name = "job match analysis"
+        verbose_name_plural = "job match analyses"
+        ordering = ["-analyzed_at"]
+
+    def __str__(self) -> str:
+        return f"Match {self.match_score}% for {self.job.title}"
+

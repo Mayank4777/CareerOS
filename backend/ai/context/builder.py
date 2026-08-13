@@ -131,3 +131,26 @@ class UserContextBuilder:
             "prep_notes": interview.prep_notes,
             "ai_prep_data": interview.ai_prep_data,
         }
+
+    def build_job_match_context(self, user: Any, job_id: str, resume_id: str) -> dict[str, Any]:
+        """Assemble contextual Job Match evaluation context, strictly isolating user ownership."""
+        job_ctx = self.build_job_context(user=user, job_id=job_id)
+        resume_ctx = self.build_resume_context(user=user, resume_id=resume_id)
+        user_ctx = self.build_user_context(user=user)
+
+        return {
+            "candidate_name": user_ctx.get("candidate_name", ""),
+            "headline": user_ctx.get("headline", ""),
+            "summary": user_ctx.get("summary", ""),
+            "skills": ", ".join(user_ctx.get("skills", [])) if isinstance(user_ctx.get("skills"), list) else str(user_ctx.get("skills", "")),
+            "experiences": "\n".join(user_ctx.get("experiences", [])),
+            "projects": "\n".join(user_ctx.get("projects", [])),
+            "resume_title": resume_ctx.get("title", ""),
+            "resume_target_role": resume_ctx.get("target_role", ""),
+            "resume_content": str(resume_ctx.get("content_data", "")),
+            "job_title": job_ctx.get("title", ""),
+            "company_name": job_ctx.get("company", ""),
+            "location": job_ctx.get("location", ""),
+            "salary_range": job_ctx.get("salary_range", ""),
+            "job_description": job_ctx.get("description", ""),
+        }

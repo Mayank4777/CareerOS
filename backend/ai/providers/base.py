@@ -37,6 +37,12 @@ class AIProviderTimeoutError(AIProviderError):
         super().__init__(message, status_code=504)
 
 
+class AIProviderRateLimitError(AIProviderError):
+    """Raised when AI provider rate limit (429) is exceeded."""
+    def __init__(self, message: str = "AI provider rate limit exceeded.") -> None:
+        super().__init__(message, status_code=429)
+
+
 class AIProviderConfigError(AIProviderError):
     """Raised when AI provider configuration is missing or invalid."""
     def __init__(self, message: str = "AI provider configuration error.") -> None:

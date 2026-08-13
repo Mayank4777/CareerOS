@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 
 from apps.common.responses import error_response, success_response
 
+from ai.parsers import AIResponseParsingError
 from ai.providers.base import AIProviderError
 
 from .exceptions import OllamaError
@@ -14,6 +15,7 @@ from .serializers import (
     AIHistorySerializer,
     CareerAdviceSerializer,
     CoverLetterRequestSerializer,
+    JobMatchResponseSerializer,
     JobMatchSerializer,
     SkillGapSerializer,
 )
@@ -137,16 +139,19 @@ class JobMatchAPIView(APIView):
         try:
             result = service.get_job_match(
                 user=request.user,
-                job_title=serializer.validated_data["job_title"],
-                company_name=serializer.validated_data["company_name"],
-                job_description=serializer.validated_data.get("job_description", ""),
+                job_id=str(serializer.validated_data["job_id"]),
+                resume_id=str(serializer.validated_data["resume_id"]),
             )
+            response_serializer = JobMatchResponseSerializer(data=result)
+            response_serializer.is_valid(raise_exception=True)
             return success_response(
-                message="Job match calculation complete.",
-                data=result,
+                message="Job match evaluation complete.",
+                data=response_serializer.data,
             )
-        except (AIProviderError, OllamaError) as exc:
-            return error_response(message=exc.message, status_code=exc.status_code)
+        except ValueError as exc:
+            return error_response(message=str(exc), status_code=status.HTTP_404_NOT_FOUND)
+        except (AIProviderError, OllamaError, AIResponseParsingError) as exc:
+            return error_response(message=exc.message, status_code=getattr(exc, "status_code", status.HTTP_502_BAD_GATEWAY))
 
 
 class AIHistoryAPIView(APIView):

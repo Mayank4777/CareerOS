@@ -127,35 +127,39 @@ export async function getCareerAdvice(payload: {
 }
 
 export async function getJobMatch(payload: {
-  jobTitle: string;
-  companyName: string;
-  jobDescription?: string;
+  jobId: string;
+  resumeId: string;
 }): Promise<JobMatchResponse> {
   const response = await apiClient.post<
     ApiResponse<{
-      job_title: string;
-      company_name: string;
+      id: string;
+      job_id: string;
+      resume_id: string;
       match_score: number;
       strengths: string[];
+      missing_skills: string[];
       gaps: string[];
-      recommendation: string;
+      recommendations: string[];
+      analyzed_at: string;
     }>
   >(AI_ROUTES.jobMatch, {
-    job_title: payload.jobTitle,
-    company_name: payload.companyName,
-    job_description: payload.jobDescription,
+    job_id: payload.jobId,
+    resume_id: payload.resumeId,
   });
 
   const data = response.data.data;
-  if (!data) throw new Error("No data returned");
+  if (!data) throw new Error("No data returned from AI server");
 
   return {
-    jobTitle: data.job_title,
-    companyName: data.company_name,
+    id: data.id,
+    jobId: data.job_id,
+    resumeId: data.resume_id,
     matchScore: data.match_score,
     strengths: data.strengths,
+    missingSkills: data.missing_skills,
     gaps: data.gaps,
-    recommendation: data.recommendation,
+    recommendations: data.recommendations,
+    analyzedAt: data.analyzed_at,
   };
 }
 
