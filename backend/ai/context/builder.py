@@ -154,3 +154,23 @@ class UserContextBuilder:
             "salary_range": job_ctx.get("salary_range", ""),
             "job_description": job_ctx.get("description", ""),
         }
+
+    def build_resume_review_context(self, user: Any, resume_id: str) -> dict[str, Any]:
+        """Assemble contextual Resume Review evaluation context, strictly isolating user ownership."""
+        resume_ctx = self.build_resume_context(user=user, resume_id=resume_id)
+        user_ctx = self.build_user_context(user=user)
+
+        return {
+            "candidate_name": user_ctx.get("candidate_name", ""),
+            "headline": user_ctx.get("headline", ""),
+            "summary": user_ctx.get("summary", ""),
+            "skills": ", ".join(user_ctx.get("skills", [])) if isinstance(user_ctx.get("skills"), list) else str(user_ctx.get("skills", "")),
+            "experiences": "\n".join(user_ctx.get("experiences", [])),
+            "projects": "\n".join(user_ctx.get("projects", [])),
+            "educations": "\n".join(user_ctx.get("educations", [])),
+            "resume_title": resume_ctx.get("title", ""),
+            "resume_target_role": resume_ctx.get("target_role", ""),
+            "resume_job_description": resume_ctx.get("job_description", ""),
+            "resume_content": str(resume_ctx.get("content_data", "")),
+        }
+

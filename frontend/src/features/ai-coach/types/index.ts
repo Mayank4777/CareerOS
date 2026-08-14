@@ -59,3 +59,14 @@ export interface AIHistoryItem {
   totalTokens: number;
   createdAt: string;
 }
+
+export type ResumeReviewResult = {
+  id: string;
+  resume_id: string;
+  score: number;
+  strengths: string[];
+  weaknesses: string[];
+  recommendations: string[];
+  analyzed_at: string;
+};
+

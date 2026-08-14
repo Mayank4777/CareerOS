@@ -17,9 +17,12 @@ from .serializers import (
     CoverLetterRequestSerializer,
     JobMatchResponseSerializer,
     JobMatchSerializer,
+    ResumeReviewRequestSerializer,
+    ResumeReviewResponseSerializer,
     SkillGapSerializer,
 )
 from .services import AICoachService
+
 
 
 class AIChatAPIView(APIView):
@@ -154,6 +157,32 @@ class JobMatchAPIView(APIView):
             return error_response(message=exc.message, status_code=getattr(exc, "status_code", status.HTTP_502_BAD_GATEWAY))
 
 
+class ResumeReviewAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ResumeReviewRequestSerializer
+    service_class = AICoachService
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        service = self.service_class()
+        try:
+            result = service.review_resume(
+                user=request.user,
+                resume_id=str(serializer.validated_data["resume_id"]),
+            )
+            response_serializer = ResumeReviewResponseSerializer(data=result)
+            response_serializer.is_valid(raise_exception=True)
+            return success_response(
+                message="Resume review evaluation complete.",
+                data=response_serializer.data,
+            )
+        except ValueError as exc:
+            return error_response(message=str(exc), status_code=status.HTTP_404_NOT_FOUND)
+        except (AIProviderError, OllamaError, AIResponseParsingError) as exc:
+            return error_response(message=exc.message, status_code=getattr(exc, "status_code", status.HTTP_502_BAD_GATEWAY))
+
+
 class AIHistoryAPIView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = AIHistorySerializer
@@ -166,3 +195,4 @@ class AIHistoryAPIView(APIView):
             message="AI usage history retrieved.",
             data=self.serializer_class(history, many=True).data,
         )
+

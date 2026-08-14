@@ -49,8 +49,10 @@ export const AI_ROUTES = {
   careerAdvice: "/ai/career-advice/",
   skillGap: "/ai/skill-gap/",
   jobMatch: "/ai/job-match/",
+  resumeReview: "/ai/resume-review/",
   history: "/ai/history/",
 } as const;
+
 
 export const SETTINGS_ROUTES = {
   root: "/settings/",

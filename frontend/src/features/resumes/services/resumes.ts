@@ -58,10 +58,13 @@ export async function deleteResume(resumeId: string): Promise<void> {
   await apiClient.delete(`${RESUMES_ROOT}${resumeId}/`);
 }
 
-export async function reviewResume(resumeId: string): Promise<any> {
-  const response = await apiClient.post<ApiResponse<any>>(`${RESUMES_ROOT}${resumeId}/review/`);
-  return response.data.data;
+import { reviewResume as reviewResumeApi } from "@/features/ai-coach/services/ai-coach-service";
+import type { ResumeReviewResult } from "@/features/ai-coach/types";
+
+export async function reviewResume(resumeId: string): Promise<ResumeReviewResult> {
+  return reviewResumeApi({ resumeId });
 }
+
 
 export async function applyResumeSuggestion(resumeId: string, suggestion: { section_key?: string; original_text: string; suggested_text: string }): Promise<Resume> {
   const response = await apiClient.post<ApiResponse<Resume>>(`${RESUMES_ROOT}${resumeId}/apply-suggestion/`, suggestion);

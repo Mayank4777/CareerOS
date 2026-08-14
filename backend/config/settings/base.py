@@ -242,3 +242,6 @@ AI_PROVIDER_CHAIN = _list("AI_PROVIDER_CHAIN", "huggingface,gemini,ollama")
 _default_ai_provider = "huggingface" if HF_API_TOKEN else "ollama"
 AI_PROVIDER = os.environ.get("AI_PROVIDER", _default_ai_provider).lower()
 
+TEST_RUNNER = "config.test_runner.FastTestRunner"
+
+

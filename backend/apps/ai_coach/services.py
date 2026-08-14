@@ -6,13 +6,14 @@ from ai.context.builder import UserContextBuilder
 from ai.orchestrator.orchestrator import AIOrchestrator
 
 from ai.parsers import AISchemaValidationError, JSONResponseParser
-from ai.prompts import JobMatchPromptTemplate
+from ai.prompts import JobMatchPromptTemplate, ResumeReviewPromptTemplate
 from apps.jobs.models import JobMatchAnalysis, SavedJob
-from apps.resumes.models import Resume
+from apps.resumes.models import Resume, ResumeAnalysis
 
 from .models import AIHistory
 from .prompts import get_prompt_builder
-from .serializers import JobMatchResultSerializer
+from .serializers import JobMatchResultSerializer, ResumeReviewResultSerializer
+
 
 
 class AICoachService:
@@ -156,5 +157,66 @@ class AICoachService:
             "analyzed_at": analysis.analyzed_at.isoformat(),
         }
 
+    def review_resume(self, user: Any, resume_id: str) -> dict[str, Any]:
+        """Perform contextual Resume Review evaluation for a target Resume."""
+        context = self.context_builder.build_resume_review_context(user=user, resume_id=resume_id)
+        prompt_template = ResumeReviewPromptTemplate()
+        system_prompt, user_prompt = prompt_template.format(context)
+
+        parser = JSONResponseParser(required_fields=["score", "strengths", "weaknesses", "recommendations"])
+
+        ai_response = self.orchestrator.generate(
+            prompt=user_prompt,
+            system_prompt=system_prompt,
+            parser=parser,
+        )
+
+        parsed_data = ai_response.raw_response.get("parsed", {})
+
+        result_serializer = ResumeReviewResultSerializer(data=parsed_data)
+        if not result_serializer.is_valid():
+            errors_summary = "; ".join(
+                [f"{field}: {', '.join(errs) if isinstance(errs, list) else str(errs)}" for field, errs in result_serializer.errors.items()]
+            )
+            raise AISchemaValidationError(f"AI response failed schema validation: {errors_summary}")
+
+        validated_result = result_serializer.validated_data
+
+        resume = Resume.objects.get(career_profile__user=user, id=resume_id)
+
+        analysis = ResumeAnalysis.objects.create(
+            resume=resume,
+            score=validated_result["score"],
+            strengths=validated_result["strengths"],
+            weaknesses=validated_result["weaknesses"],
+            recommendations=validated_result["recommendations"],
+        )
+
+        AIHistory.objects.create(
+            user=user,
+            feature="resume_review",
+            provider=ai_response.provider_name,
+            model=ai_response.model_name,
+            prompt_tokens=ai_response.prompt_tokens,
+            completion_tokens=ai_response.completion_tokens,
+            total_tokens=ai_response.total_tokens,
+            response_data={
+                "resume_id": str(resume_id),
+                "analysis_id": str(analysis.id),
+                "score": analysis.score,
+            },
+        )
+
+        return {
+            "id": str(analysis.id),
+            "resume_id": str(resume.id),
+            "score": analysis.score,
+            "strengths": analysis.strengths,
+            "weaknesses": analysis.weaknesses,
+            "recommendations": analysis.recommendations,
+            "analyzed_at": analysis.analyzed_at.isoformat(),
+        }
+
     def get_history(self, user):
         return AIHistory.objects.filter(user=user)
+

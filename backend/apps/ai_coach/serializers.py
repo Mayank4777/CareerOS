@@ -110,3 +110,49 @@ class JobMatchResponseSerializer(serializers.Serializer):
     gaps = serializers.ListField(child=serializers.CharField())
     recommendations = serializers.ListField(child=serializers.CharField())
     analyzed_at = serializers.DateTimeField()
+
+
+class ResumeReviewRequestSerializer(serializers.Serializer):
+    resume_id = serializers.UUIDField(required=True)
+
+
+class ResumeReviewResultSerializer(serializers.Serializer):
+    score = serializers.IntegerField(min_value=0, max_value=100)
+    strengths = serializers.ListField(child=serializers.CharField(allow_blank=True))
+    weaknesses = serializers.ListField(child=serializers.CharField(allow_blank=True))
+    recommendations = serializers.ListField(child=serializers.CharField(allow_blank=True))
+
+    def validate_score(self, value: int) -> int:
+        raw_val = self.initial_data.get("score")
+        if type(raw_val) is not int or isinstance(raw_val, bool):
+            raise serializers.ValidationError("score must be an integer between 0 and 100.")
+        return value
+
+    def validate_strengths(self, value: list[str]) -> list[str]:
+        raw_val = self.initial_data.get("strengths")
+        if not isinstance(raw_val, list):
+            raise serializers.ValidationError("strengths must be a list of strings.")
+        return value
+
+    def validate_weaknesses(self, value: list[str]) -> list[str]:
+        raw_val = self.initial_data.get("weaknesses")
+        if not isinstance(raw_val, list):
+            raise serializers.ValidationError("weaknesses must be a list of strings.")
+        return value
+
+    def validate_recommendations(self, value: list[str]) -> list[str]:
+        raw_val = self.initial_data.get("recommendations")
+        if not isinstance(raw_val, list):
+            raise serializers.ValidationError("recommendations must be a list of strings.")
+        return value
+
+
+class ResumeReviewResponseSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    resume_id = serializers.UUIDField()
+    score = serializers.IntegerField(min_value=0, max_value=100)
+    strengths = serializers.ListField(child=serializers.CharField())
+    weaknesses = serializers.ListField(child=serializers.CharField())
+    recommendations = serializers.ListField(child=serializers.CharField())
+    analyzed_at = serializers.DateTimeField()
+
