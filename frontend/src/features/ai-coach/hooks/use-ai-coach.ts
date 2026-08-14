@@ -5,8 +5,10 @@ import {
   analyzeSkillGap,
   getCareerAdvice,
   getJobMatch,
+  analyzeJobSkillGap,
   fetchAIHistory,
 } from "../services/ai-coach-service";
+
 
 export const AI_COACH_QUERY_KEY = ["ai-coach"];
 
@@ -61,6 +63,16 @@ export function useGetJobMatch() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: getJobMatch,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: AI_COACH_QUERY_KEY });
+    },
+  });
+}
+
+export function useAnalyzeJobSkillGap() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: analyzeJobSkillGap,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: AI_COACH_QUERY_KEY });
     },

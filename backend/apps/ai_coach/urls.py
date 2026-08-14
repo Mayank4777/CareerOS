@@ -9,13 +9,15 @@ from .views import (
     CoverLetterAPIView,
     JobMatchAPIView,
     ResumeReviewAPIView,
+    SkillGapAnalysisAPIView,
     SkillGapAPIView,
 )
 
 urlpatterns = [
     path("chat/", AIChatAPIView.as_view(), name="ai_chat"),
     path("cover-letter/", CoverLetterAPIView.as_view(), name="ai_cover_letter"),
-    path("skill-gap/", SkillGapAPIView.as_view(), name="ai_skill_gap"),
+    path("skill-gap/", SkillGapAnalysisAPIView.as_view(), name="ai_skill_gap"),
+
     path("career-advice/", CareerAdviceAPIView.as_view(), name="ai_career_advice"),
     path("job-match/", JobMatchAPIView.as_view(), name="ai_job_match"),
     path("resume-review/", ResumeReviewAPIView.as_view(), name="ai_resume_review"),

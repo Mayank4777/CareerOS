@@ -70,3 +70,25 @@ export type ResumeReviewResult = {
   analyzed_at: string;
 };
 
+export interface MissingSkillItem {
+  skill: string;
+  importance: "high" | "medium" | "low";
+  reason: string;
+  recommendation: string;
+}
+
+export interface PartialSkillItem {
+  skill: string;
+  reason: string;
+  recommendation: string;
+}
+
+export interface SkillGapJobResult {
+  id: string;
+  job_id: string;
+  matched_skills: string[];
+  missing_skills: MissingSkillItem[];
+  partial_skills: PartialSkillItem[];
+  recommendations: string[];
+  analyzed_at: string;
+}

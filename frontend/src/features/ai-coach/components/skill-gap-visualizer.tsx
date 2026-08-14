@@ -1,45 +1,42 @@
 import { useState } from "react";
-import { Sparkles, CheckCircle2, AlertCircle, ArrowRight, Zap, Target } from "lucide-react";
+import { Sparkles, CheckCircle2, AlertCircle, ArrowRight, Zap, Target, Briefcase, AlertTriangle, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/ui/form-field";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useAnalyzeSkillGap } from "../hooks/use-ai-coach";
+import { useSavedJobs } from "@/features/jobs/hooks/use-jobs";
+import { useAnalyzeJobSkillGap } from "../hooks/use-ai-coach";
 import { useToast } from "@/components/ui/toast";
-import type { SkillGapResponse } from "../types";
+import { Link } from "react-router-dom";
+import type { SkillGapJobResult } from "../types";
 
 export function SkillGapVisualizer() {
   const toast = useToast();
-  const [targetRole, setTargetRole] = useState("");
-  const [customSkills, setCustomSkills] = useState("");
-  const [analysis, setAnalysis] = useState<SkillGapResponse | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<string>("");
+  const [analysis, setAnalysis] = useState<SkillGapJobResult | null>(null);
 
-  const analyzeMutation = useAnalyzeSkillGap();
+  const { data: savedJobsData, isLoading: isLoadingJobs } = useSavedJobs();
+  const savedJobs = savedJobsData ?? [];
+
+  const analyzeMutation = useAnalyzeJobSkillGap();
 
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!targetRole) {
-      toast.error("Please enter a target role.");
+    if (!selectedJobId) {
+      toast.error("Please select a target saved job.");
       return;
     }
 
-    const requiredSkillsList = customSkills
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-
     try {
-      const res = await analyzeMutation.mutateAsync({
-        targetRole,
-        requiredSkills: requiredSkillsList,
-      });
+      const res = await analyzeMutation.mutateAsync({ jobId: selectedJobId });
       setAnalysis(res);
-      toast.success("Skill gap analysis complete.");
+      toast.success("Skill gap analysis completed.");
     } catch {
       toast.error("Failed to analyze skill gaps.");
     }
   };
+
+  const selectedJob = savedJobs.find((j) => j.id === selectedJobId);
 
   return (
     <div className="space-y-6">
@@ -50,110 +47,196 @@ export function SkillGapVisualizer() {
               <span className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20">
                 <Target className="w-5 h-5" />
               </span>
-              Skill Gap & Target Role Radar
+              Contextual Skill Gap Analysis
             </h3>
             <p className="text-xs text-secondary mt-1">
-              Cross-examine your active Career Profile skills against market benchmarks for target engineering & product roles.
+              Select one of your Saved Jobs to analyze your profile skills, missing requirements, and actionable recommendations.
             </p>
           </div>
         </div>
 
-        <form onSubmit={handleAnalyze} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <FormField label="Target Target Role Title" htmlFor="sg-role" className="sm:col-span-1" required>
-            <Input
-              id="sg-role"
-              placeholder="e.g. Lead Backend Architect"
-              value={targetRole}
-              onChange={(e) => setTargetRole(e.target.value)}
-            />
-          </FormField>
-
-          <FormField label="Required Skills Benchmark (Comma-separated)" htmlFor="sg-skills" className="sm:col-span-1">
-            <Input
-              id="sg-skills"
-              placeholder="e.g. Python, Docker, System Design"
-              value={customSkills}
-              onChange={(e) => setCustomSkills(e.target.value)}
-            />
-          </FormField>
-
-          <div className="flex items-end sm:col-span-1">
-            <Button type="submit" variant="gradient" disabled={analyzeMutation.isPending} className="w-full flex items-center justify-center gap-2 h-10">
-              <Zap className="w-4 h-4" />
-              {analyzeMutation.isPending ? "Evaluating Radar..." : "Evaluate Skill Gap"}
-            </Button>
+        {isLoadingJobs ? (
+          <div className="py-4 text-center text-xs text-secondary animate-pulse" aria-busy="true">
+            Loading saved jobs...
           </div>
-        </form>
+        ) : savedJobs.length === 0 ? (
+          <div className="p-4 rounded-xl bg-surface/50 border border-border text-center space-y-3">
+            <Briefcase className="w-8 h-8 text-secondary mx-auto" />
+            <p className="text-sm font-medium text-primary">No Saved Jobs Available</p>
+            <p className="text-xs text-secondary">
+              You need at least one Saved Job to perform contextual skill gap analysis.
+            </p>
+            <Link to="/jobs/saved">
+              <Button variant="outline" size="sm" className="mt-2">
+                Manage Saved Jobs
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          <form onSubmit={handleAnalyze} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <FormField label="Target Saved Job" htmlFor="sg-job-select" className="sm:col-span-2" required>
+              <select
+                id="sg-job-select"
+                className="w-full h-10 px-3 rounded-lg bg-surface border border-border text-sm text-primary focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                value={selectedJobId}
+                onChange={(e) => {
+                  setSelectedJobId(e.target.value);
+                  setAnalysis(null);
+                }}
+              >
+                <option value="">-- Select a Saved Job --</option>
+                {savedJobs.map((job) => (
+                  <option key={job.id} value={job.id}>
+                    {job.title} at {job.company}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+
+            <div className="flex items-end sm:col-span-1">
+              <Button
+                type="submit"
+                variant="gradient"
+                disabled={!selectedJobId || analyzeMutation.isPending}
+                aria-busy={analyzeMutation.isPending}
+                className="w-full flex items-center justify-center gap-2 h-10"
+              >
+                <Zap className="w-4 h-4" />
+                {analyzeMutation.isPending ? "Analyzing Gaps..." : "Analyze Skill Gap"}
+              </Button>
+            </div>
+          </form>
+        )}
       </Card>
 
-      {analysis && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="p-6 flex flex-col items-center justify-center text-center border-indigo-500/30 bg-card/90 relative overflow-hidden">
-            <div className="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
-            <h4 className="text-xs uppercase tracking-widest font-bold text-secondary mb-3">Market Readiness Index</h4>
-            
-            <div className="relative flex items-center justify-center my-2">
-              <div className="w-28 h-28 rounded-full border-4 border-indigo-500/20 flex items-center justify-center bg-surface/50 shadow-inner">
-                <span className="text-4xl font-black gradient-text">{analysis.readinessScore}%</span>
-              </div>
-            </div>
+      {analyzeMutation.isPending && (
+        <Card className="p-8 text-center space-y-3 border-purple-500/30 bg-purple-500/5 animate-pulse" aria-busy="true">
+          <Sparkles className="w-8 h-8 text-purple-400 mx-auto animate-spin" />
+          <h4 className="text-sm font-semibold text-primary">Evaluating Skill Gap...</h4>
+          <p className="text-xs text-secondary max-w-md mx-auto">
+            Comparing profile capabilities against {selectedJob ? selectedJob.title : "selected job"} requirements and generating recommendations.
+          </p>
+        </Card>
+      )}
 
-            <div className="w-full bg-surface/80 rounded-full h-2 mt-4 overflow-hidden border border-border/60">
-              <div
-                className="h-full bg-gradient-to-r from-indigo-500 via-cyan-400 to-emerald-400 transition-all duration-500"
-                style={{ width: `${analysis.readinessScore}%` }}
-              />
-            </div>
-            <p className="text-xs font-medium text-secondary mt-3">Target Profile Match: {analysis.targetRole}</p>
-          </Card>
+      {analyzeMutation.isError && (
+        <Card className="p-6 border-red-500/30 bg-red-500/5 space-y-3">
+          <div className="flex items-center gap-2 text-red-400">
+            <AlertTriangle className="w-5 h-5" />
+            <h4 className="text-sm font-bold">Analysis Failed</h4>
+          </div>
+          <p className="text-xs text-secondary">
+            Unable to analyze skill gaps for this job right now. Please try again.
+          </p>
+          <Button variant="outline" size="sm" onClick={handleAnalyze}>
+            Retry Analysis
+          </Button>
+        </Card>
+      )}
 
-          <Card className="p-6 md:col-span-2 space-y-5 border-border/80 bg-card/90">
-            <div>
-              <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2.5 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4" /> Profile Skill Strengths
+      {analysis && !analyzeMutation.isPending && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Matched Skills */}
+            <Card className="p-6 space-y-4 border-emerald-500/20 bg-card/90">
+              <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" /> Matched Skills ({analysis.matched_skills.length})
               </h4>
               <div className="flex flex-wrap gap-2">
-                {analysis.matchingSkills.length > 0 ? (
-                  analysis.matchingSkills.map((sk) => (
-                    <Badge key={sk} tone="success">
+                {analysis.matched_skills.length > 0 ? (
+                  analysis.matched_skills.map((sk) => (
+                    <Badge key={sk} tone="success" className="px-2.5 py-1 text-xs">
                       {sk}
                     </Badge>
                   ))
                 ) : (
-                  <span className="text-xs text-secondary">No matching skills recorded in profile yet.</span>
+                  <span className="text-xs text-secondary">No exact skill matches recorded yet.</span>
                 )}
               </div>
-            </div>
+            </Card>
 
-            <div className="pt-2 border-t border-border/60">
-              <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2.5 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4" /> Benchmark Skill Gaps
+            {/* Missing Skills */}
+            <Card className="p-6 space-y-4 md:col-span-2 border-amber-500/20 bg-card/90">
+              <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" /> Missing Skills ({analysis.missing_skills.length})
               </h4>
-              <div className="flex flex-wrap gap-2">
-                {analysis.missingSkills.length > 0 ? (
-                  analysis.missingSkills.map((sk) => (
-                    <Badge key={sk} tone="warning">
-                      {sk}
-                    </Badge>
-                  ))
-                ) : (
-                  <span className="text-xs text-emerald-400 font-semibold">100% Target Match Achieved!</span>
-                )}
-              </div>
-            </div>
+              {analysis.missing_skills.length > 0 ? (
+                <div className="space-y-3">
+                  {analysis.missing_skills.map((item, idx) => (
+                    <div key={idx} className="p-3.5 rounded-xl bg-surface/50 border border-border/70 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-primary">{item.skill}</span>
+                        <Badge
+                          tone={
+                            item.importance === "high"
+                              ? "danger"
+                              : item.importance === "medium"
+                              ? "warning"
+                              : "neutral"
+                          }
+                          className="uppercase text-[10px] tracking-wider px-2 py-0.5"
+                        >
+                          {item.importance} Importance
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-secondary leading-relaxed">{item.reason}</p>
+                      <div className="text-xs text-cyan-400 flex items-start gap-1.5 pt-1">
+                        <ArrowRight className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                        <span>{item.recommendation}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-xs text-emerald-400 font-semibold">No critical skill gaps identified!</span>
+              )}
+            </Card>
+          </div>
 
-            <div className="pt-3 border-t border-border/60">
-              <h4 className="text-xs font-bold text-primary mb-3">AI Actionable Learning Strategy:</h4>
-              <div className="space-y-2">
-                {analysis.recommendations.map((rec, i) => (
-                  <div key={i} className="text-xs text-secondary flex items-start gap-2.5 bg-surface/50 p-2.5 rounded-xl border border-border/60">
-                    <ArrowRight className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span className="leading-relaxed">{rec}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Card>
+          {/* Partial Skills & Learning Recommendations */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Partial Skills */}
+            <Card className="p-6 space-y-4 border-indigo-500/20 bg-card/90">
+              <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
+                <BookOpen className="w-4 h-4" /> Partially Matched Skills ({analysis.partial_skills.length})
+              </h4>
+              {analysis.partial_skills.length > 0 ? (
+                <div className="space-y-3">
+                  {analysis.partial_skills.map((item, idx) => (
+                    <div key={idx} className="p-3.5 rounded-xl bg-surface/50 border border-border/70 space-y-2">
+                      <span className="text-sm font-bold text-primary">{item.skill}</span>
+                      <p className="text-xs text-secondary leading-relaxed">{item.reason}</p>
+                      <div className="text-xs text-cyan-400 flex items-start gap-1.5 pt-1">
+                        <ArrowRight className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                        <span>{item.recommendation}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-xs text-secondary">No partial skill gaps identified.</span>
+              )}
+            </Card>
+
+            {/* Actionable Recommendations */}
+            <Card className="p-6 space-y-4 border-purple-500/20 bg-card/90">
+              <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center gap-2">
+                <Sparkles className="w-4 h-4" /> Actionable Learning Roadmap
+              </h4>
+              {analysis.recommendations.length > 0 ? (
+                <div className="space-y-2.5">
+                  {analysis.recommendations.map((rec, i) => (
+                    <div key={i} className="text-xs text-secondary flex items-start gap-2.5 bg-surface/50 p-3 rounded-xl border border-border/60">
+                      <ArrowRight className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                      <span className="leading-relaxed">{rec}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-xs text-secondary">No recommendations generated.</span>
+              )}
+            </Card>
+          </div>
         </div>
       )}
     </div>

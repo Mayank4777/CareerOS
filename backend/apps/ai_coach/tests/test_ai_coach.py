@@ -44,22 +44,35 @@ class AICoachAPITestCase(APITestCase):
 
     @patch("ai.orchestrator.orchestrator.AIOrchestrator.generate")
     def test_skill_gap_analysis(self, mock_generate):
+        from apps.career_profile.models import CareerProfile
+        from apps.jobs.models import SavedJob
+
+        profile = CareerProfile.objects.create(user=self.user, first_name="Test", last_name="User")
+        job = SavedJob.objects.create(career_profile=profile, title="Backend Lead", company="Stripe", description="Python and AWS")
+
+        ai_payload = {
+            "matched_skills": ["Python"],
+            "missing_skills": [{"skill": "AWS", "importance": "high", "reason": "Cloud infra", "recommendation": "Learn AWS"}],
+            "partial_skills": [],
+        }
+
         mock_generate.return_value = AIResponse(
-            content="Readiness Score: 85%. Missing skills: Kubernetes, GraphQL.",
+            content=str(ai_payload),
             provider_name="ollama",
             model_name="phi3:latest",
             prompt_tokens=80,
             completion_tokens=120,
             total_tokens=200,
+            raw_response={"parsed": ai_payload},
         )
 
         payload = {
-            "target_role": "Backend Lead",
-            "required_skills": ["Python", "Kubernetes", "GraphQL"],
+            "job_id": str(job.id),
         }
         response = self.client.post("/api/v1/ai/skill-gap/", payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["data"]["feature"], "ats_review")
+        self.assertEqual(response.data["data"]["job_id"], str(job.id))
+
 
     @patch("ai.orchestrator.orchestrator.AIOrchestrator.generate")
     def test_career_advice(self, mock_generate):

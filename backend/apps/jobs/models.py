@@ -76,3 +76,30 @@ class JobMatchAnalysis(models.Model):
     def __str__(self) -> str:
         return f"Match {self.match_score}% for {self.job.title}"
 
+
+class SkillGapAnalysis(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    career_profile = models.ForeignKey(
+        CareerProfile,
+        on_delete=models.CASCADE,
+        related_name="skill_gap_analyses",
+    )
+    job = models.ForeignKey(
+        SavedJob,
+        on_delete=models.CASCADE,
+        related_name="skill_gap_analyses",
+    )
+    matched_skills = models.JSONField(default=list, blank=True)
+    missing_skills = models.JSONField(default=list, blank=True)
+    partial_skills = models.JSONField(default=list, blank=True)
+    recommendations = models.JSONField(default=list, blank=True)
+    analyzed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "skill_gap_analysis"
+        verbose_name = "skill gap analysis"
+        verbose_name_plural = "skill gap analyses"
+        ordering = ["-analyzed_at"]
+
+    def __str__(self) -> str:
+        return f"Skill Gap Analysis for {self.job.title}"

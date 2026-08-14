@@ -8,8 +8,11 @@ import type {
   CareerAdviceResponse,
   JobMatchResponse,
   ResumeReviewResult,
+  SkillGapJobResult,
   AIHistoryItem,
 } from "../types";
+
+
 
 
 export async function sendAIChat(payload: {
@@ -180,6 +183,23 @@ export async function reviewResume(payload: {
 
   return data;
 }
+
+export async function analyzeJobSkillGap(payload: {
+  jobId: string;
+}): Promise<SkillGapJobResult> {
+  const response = await apiClient.post<ApiResponse<SkillGapJobResult>>(
+    AI_ROUTES.skillGap,
+    {
+      job_id: payload.jobId,
+    }
+  );
+
+  const data = response.data.data;
+  if (!data) throw new Error("No data returned from AI server");
+
+  return data;
+}
+
 
 export async function fetchAIHistory(): Promise<AIHistoryItem[]> {
 

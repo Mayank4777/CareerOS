@@ -9,6 +9,7 @@ from apps.common.responses import error_response, success_response
 from ai.parsers import AIResponseParsingError
 from ai.providers.base import AIProviderError
 
+from apps.jobs.models import SavedJob
 from .exceptions import OllamaError
 from .serializers import (
     AIChatSerializer,
@@ -19,8 +20,11 @@ from .serializers import (
     JobMatchSerializer,
     ResumeReviewRequestSerializer,
     ResumeReviewResponseSerializer,
+    SkillGapJobRequestSerializer,
+    SkillGapJobResponseSerializer,
     SkillGapSerializer,
 )
+
 from .services import AICoachService
 
 
@@ -84,7 +88,34 @@ class CoverLetterAPIView(APIView):
             return error_response(message=exc.message, status_code=exc.status_code)
 
 
+class SkillGapAnalysisAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = SkillGapJobRequestSerializer
+    service_class = AICoachService
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        service = self.service_class()
+        try:
+            result = service.analyze_job_skill_gap(
+                user=request.user,
+                job_id=str(serializer.validated_data["job_id"]),
+            )
+            response_serializer = SkillGapJobResponseSerializer(data=result)
+            response_serializer.is_valid(raise_exception=True)
+            return success_response(
+                message="Contextual skill gap analysis complete.",
+                data=response_serializer.data,
+            )
+        except (SavedJob.DoesNotExist, ValueError) as exc:
+            return error_response(message="Saved job not found.", status_code=status.HTTP_404_NOT_FOUND)
+        except (AIProviderError, OllamaError, AIResponseParsingError) as exc:
+            return error_response(message=exc.message, status_code=getattr(exc, "status_code", status.HTTP_502_BAD_GATEWAY))
+
+
 class SkillGapAPIView(APIView):
+
     permission_classes = [IsAuthenticated]
     serializer_class = SkillGapSerializer
     service_class = AICoachService
