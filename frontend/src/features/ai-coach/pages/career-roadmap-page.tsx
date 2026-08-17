@@ -1,83 +1,144 @@
-import { CheckCircle2, Circle, ArrowRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ErrorState } from "@/components/ui/error-state";
+import { useSavedJobs } from "@/features/jobs/hooks/use-jobs";
+import { useRoadmaps, useRoadmapDetail } from "../hooks/use-ai-coach";
+import { RoadmapHeader } from "../components/roadmap-header";
+import { RoadmapTimeline } from "../components/roadmap-timeline";
+import { GenerateRoadmapCard } from "../components/generate-roadmap-card";
 
 export function CareerRoadmapPage() {
-  const milestones = [
-    {
-      phase: "Phase 1: Foundation & Profile",
-      status: "completed",
-      items: [
-        "Complete Career Profile details",
-        "Add education, experience, and project entries",
-        "List technical & soft skills",
-      ],
-    },
-    {
-      phase: "Phase 2: Resume Optimization",
-      status: "completed",
-      items: [
-        "Generate tailored resume versions",
-        "Run AI resume analysis & score checks",
-        "Refine bullet points with quantitative impact metrics",
-      ],
-    },
-    {
-      phase: "Phase 3: Targeted Application Strategy",
-      status: "in_progress",
-      items: [
-        "Track saved target job postings",
-        "Evaluate AI job match scores",
-        "Generate custom cover letters for top roles",
-      ],
-    },
-    {
-      phase: "Phase 4: Interview & Offer Management",
-      status: "upcoming",
-      items: [
-        "Schedule and track technical rounds",
-        "Record pre-interview prep notes & feedback",
-        "Compare job offers and salary packages",
-      ],
-    },
-  ];
+  const [selectedRoadmapId, setSelectedRoadmapId] = useState<string | null>(null);
+  const [showGenerateForm, setShowGenerateForm] = useState<boolean>(false);
+
+  // Queries
+  const {
+    data: roadmaps,
+    isLoading: isLoadingRoadmaps,
+    isError: isRoadmapsError,
+    error: roadmapsError,
+    refetch: refetchRoadmaps,
+  } = useRoadmaps();
+
+  const { data: savedJobs } = useSavedJobs({});
+
+  // Auto-select initial roadmap when roadmaps load
+  useEffect(() => {
+    if (roadmaps && roadmaps.length > 0 && !selectedRoadmapId) {
+      setSelectedRoadmapId(roadmaps[0].id);
+    }
+  }, [roadmaps, selectedRoadmapId]);
+
+  // Fetch details of selected roadmap
+  const {
+    data: activeRoadmap,
+    isLoading: isLoadingDetail,
+    isError: isDetailError,
+    error: detailError,
+    refetch: refetchDetail,
+  } = useRoadmapDetail(selectedRoadmapId);
+
+  // Match target saved job record if available
+  const targetSavedJob = savedJobs?.find((j) => j.id === activeRoadmap?.target_job);
+
+  const handleGeneratedSuccess = (newRoadmap: { id: string }) => {
+    setSelectedRoadmapId(newRoadmap.id);
+    setShowGenerateForm(false);
+  };
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-4 py-6">
-      <PageHeader
-        title="Career Roadmap"
-        description="Structured step-by-step career progression milestones toward your target role."
-      />
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <PageHeader
+          title="Career Roadmap"
+          description="Structured step-by-step progression milestones targeting your selected career opportunities."
+        />
 
-      <div className="space-y-6">
-        {milestones.map((m, idx) => (
-          <Card key={idx} className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                {m.status === "completed" ? (
-                  <CheckCircle2 className="w-5 h-5 text-success" />
-                ) : (
-                  <Circle className="w-5 h-5 text-secondary" />
-                )}
-                <h3 className="font-semibold text-base text-primary">{m.phase}</h3>
-              </div>
-              <Badge tone={m.status === "completed" ? "success" : m.status === "in_progress" ? "info" : "neutral"}>
-                {m.status.replace("_", " ")}
-              </Badge>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {m.items.map((item, i) => (
-                <div key={i} className="p-3 bg-hover/40 rounded-xl border border-border flex items-start gap-2">
-                  <ArrowRight className="w-3.5 h-3.5 text-secondary shrink-0 mt-0.5" />
-                  <span className="text-xs text-secondary">{item}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-        ))}
+        {roadmaps && roadmaps.length > 0 && !showGenerateForm && (
+          <Button
+            onClick={() => setShowGenerateForm(true)}
+            variant="primary"
+            size="sm"
+            className="self-start sm:self-auto flex items-center gap-1.5"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Generate New Roadmap</span>
+          </Button>
+        )}
       </div>
+
+      {/* Loading State for initial fetch */}
+      {isLoadingRoadmaps && (
+        <LoadingState label="Fetching your career roadmaps..." />
+      )}
+
+      {/* Error State for roadmaps fetch */}
+      {isRoadmapsError && !isLoadingRoadmaps && (
+        <ErrorState
+          title="Failed to Load Roadmaps"
+          description={
+            roadmapsError instanceof Error
+              ? roadmapsError.message
+              : "Unable to retrieve your career roadmaps. Please try again."
+          }
+          onRetry={() => void refetchRoadmaps()}
+        />
+      )}
+
+      {/* Case 1: Show Generate Form if requested or if no roadmaps exist */}
+      {!isLoadingRoadmaps && !isRoadmapsError && (showGenerateForm || !roadmaps || roadmaps.length === 0) && (
+        <div className="space-y-6">
+          <GenerateRoadmapCard
+            onSuccess={handleGeneratedSuccess}
+            onCancel={roadmaps && roadmaps.length > 0 ? () => setShowGenerateForm(false) : undefined}
+            isStandalone={!roadmaps || roadmaps.length === 0}
+          />
+        </div>
+      )}
+
+      {/* Case 2: Display active roadmap when roadmaps exist and generate form is hidden */}
+      {!isLoadingRoadmaps && !isRoadmapsError && !showGenerateForm && roadmaps && roadmaps.length > 0 && (
+        <div className="space-y-6">
+          {isLoadingDetail && (
+            <LoadingState label="Loading roadmap details..." />
+          )}
+
+          {isDetailError && !isLoadingDetail && (
+            <ErrorState
+              title="Roadmap Details Unavailable"
+              description={
+                detailError instanceof Error
+                  ? detailError.message
+                  : "Could not load details for the selected roadmap."
+              }
+              onRetry={() => void refetchDetail()}
+            />
+          )}
+
+          {activeRoadmap && !isLoadingDetail && (
+            <>
+              {/* Header Card */}
+              <RoadmapHeader
+                roadmap={activeRoadmap}
+                allRoadmaps={roadmaps}
+                targetSavedJob={targetSavedJob}
+                onSelectRoadmap={(id) => setSelectedRoadmapId(id)}
+                onNewRoadmapClick={() => setShowGenerateForm(true)}
+              />
+
+              {/* Vertical Timeline Visualizer */}
+              <RoadmapTimeline
+                roadmapId={activeRoadmap.id}
+                phases={activeRoadmap.phases || []}
+              />
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

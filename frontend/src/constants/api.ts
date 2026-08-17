@@ -51,6 +51,12 @@ export const AI_ROUTES = {
   jobMatch: "/ai/job-match/",
   resumeReview: "/ai/resume-review/",
   history: "/ai/history/",
+  roadmapList: "/ai/roadmap/",
+  roadmapGenerate: "/ai/roadmap/generate/",
+  roadmapDetail: (roadmapId: string) => `/ai/roadmap/${roadmapId}/`,
+  roadmapPhases: (roadmapId: string) => `/ai/roadmap/${roadmapId}/phases/`,
+  roadmapPhaseDetail: (roadmapId: string, phaseId: string) =>
+    `/ai/roadmap/${roadmapId}/phases/${phaseId}/`,
 } as const;
 
 

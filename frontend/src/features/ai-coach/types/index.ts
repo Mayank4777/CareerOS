@@ -92,3 +92,67 @@ export interface SkillGapJobResult {
   recommendations: string[];
   analyzed_at: string;
 }
+
+export type RoadmapStatus = "not_started" | "in_progress" | "completed" | "archived";
+export type PhaseStatus = "upcoming" | "in_progress" | "completed";
+
+export interface RoadmapPhase {
+  id: string;
+  roadmap_id?: string;
+  title: string;
+  description: string;
+  objective: string;
+  skills: string[];
+  actions: string[];
+  status: PhaseStatus;
+  ordering: number;
+  estimated_duration: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CareerRoadmap {
+  id: string;
+  title: string;
+  description: string;
+  target_role: string;
+  target_job: string | null;
+  status: RoadmapStatus;
+  phases: RoadmapPhase[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GenerateRoadmapPayload {
+  job_id: string;
+}
+
+export interface CreateRoadmapPhasePayload {
+  title: string;
+  description?: string;
+  objective?: string;
+  skills?: string[];
+  actions?: string[];
+  status?: PhaseStatus;
+  ordering?: number;
+  estimated_duration?: string;
+}
+
+export interface UpdateRoadmapPhasePayload {
+  title?: string;
+  description?: string;
+  objective?: string;
+  skills?: string[];
+  actions?: string[];
+  status?: PhaseStatus;
+  ordering?: number;
+  estimated_duration?: string;
+}
+
+export interface UpdateRoadmapPayload {
+  title?: string;
+  description?: string;
+  target_role?: string;
+  target_job_id?: string | null;
+  status?: RoadmapStatus;
+}

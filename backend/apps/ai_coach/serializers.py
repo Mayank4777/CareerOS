@@ -4,7 +4,9 @@ from typing import Any
 
 from rest_framework import serializers
 
-from .models import AIHistory
+from apps.jobs.models import SavedJob
+from .models import AIHistory, CareerRoadmap, RoadmapPhase
+
 
 REQUIRED_RESUME_REVIEW_DIMENSIONS = [
     "completeness",
@@ -362,3 +364,105 @@ class SkillGapJobResponseSerializer(serializers.Serializer):
     recommendations = serializers.ListField(child=serializers.CharField())
     analyzed_at = serializers.DateTimeField()
 
+
+class RoadmapPhaseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RoadmapPhase
+        fields = [
+            "id",
+            "roadmap_id",
+            "title",
+            "description",
+            "objective",
+            "skills",
+            "actions",
+            "status",
+            "ordering",
+            "estimated_duration",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "roadmap_id", "created_at", "updated_at"]
+
+    def validate_skills(self, value: list[Any]) -> list[str]:
+        if not isinstance(value, list):
+            raise serializers.ValidationError("skills must be a list of strings.")
+        return [str(s).strip() for s in value if str(s).strip()]
+
+    def validate_actions(self, value: list[Any]) -> list[str]:
+        if not isinstance(value, list):
+            raise serializers.ValidationError("actions must be a list of strings.")
+        return [str(a).strip() for a in value if str(a).strip()]
+
+
+class CareerRoadmapSerializer(serializers.ModelSerializer):
+    phases = RoadmapPhaseSerializer(many=True, required=False)
+    target_job_id = serializers.UUIDField(required=False, allow_null=True, write_only=True)
+
+    class Meta:
+        model = CareerRoadmap
+        fields = [
+            "id",
+            "title",
+            "description",
+            "target_role",
+            "target_job",
+            "target_job_id",
+            "status",
+            "phases",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "target_job", "created_at", "updated_at"]
+
+    def validate_target_job_id(self, value: Any) -> Any:
+        if value is None:
+            return None
+        request = self.context.get("request")
+        if request and hasattr(request, "user"):
+            user = request.user
+            if not SavedJob.objects.filter(career_profile__user=user, id=value).exists():
+                raise serializers.ValidationError("Target job not found for this user.")
+        return value
+
+    def create(self, validated_data: dict[str, Any]) -> CareerRoadmap:
+        phases_data = validated_data.pop("phases", [])
+        target_job_id = validated_data.pop("target_job_id", None)
+
+        user = self.context["request"].user
+        career_profile = user.career_profile
+
+        if target_job_id:
+            target_job = SavedJob.objects.get(career_profile__user=user, id=target_job_id)
+            validated_data["target_job"] = target_job
+
+        roadmap = CareerRoadmap.objects.create(career_profile=career_profile, **validated_data)
+
+        for phase_item in phases_data:
+            RoadmapPhase.objects.create(roadmap=roadmap, **phase_item)
+
+        return roadmap
+
+    def update(self, instance: CareerRoadmap, validated_data: dict[str, Any]) -> CareerRoadmap:
+        phases_data = validated_data.pop("phases", None)
+        target_job_id = validated_data.pop("target_job_id", serializers.empty)
+
+        user = self.context["request"].user
+
+        if target_job_id is not serializers.empty:
+            if target_job_id is None:
+                instance.target_job = None
+            else:
+                target_job = SavedJob.objects.get(career_profile__user=user, id=target_job_id)
+                instance.target_job = target_job
+
+        for attr, val in validated_data.items():
+            setattr(instance, attr, val)
+        instance.save()
+
+        if phases_data is not None:
+            instance.phases.all().delete()
+            for phase_item in phases_data:
+                RoadmapPhase.objects.create(roadmap=instance, **phase_item)
+
+        return instance

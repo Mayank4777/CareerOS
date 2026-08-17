@@ -10,6 +10,12 @@ import type {
   ResumeReviewResult,
   SkillGapJobResult,
   AIHistoryItem,
+  CareerRoadmap,
+  RoadmapPhase,
+  GenerateRoadmapPayload,
+  CreateRoadmapPhasePayload,
+  UpdateRoadmapPhasePayload,
+  UpdateRoadmapPayload,
 } from "../types";
 
 
@@ -225,3 +231,77 @@ export async function fetchAIHistory(): Promise<AIHistoryItem[]> {
     createdAt: item.created_at,
   }));
 }
+
+export async function fetchRoadmaps(): Promise<CareerRoadmap[]> {
+  const response = await apiClient.get<ApiResponse<CareerRoadmap[]>>(AI_ROUTES.roadmapList);
+  return response.data.data ?? [];
+}
+
+export async function fetchRoadmapDetail(roadmapId: string): Promise<CareerRoadmap> {
+  const response = await apiClient.get<ApiResponse<CareerRoadmap>>(AI_ROUTES.roadmapDetail(roadmapId));
+  const data = response.data.data;
+  if (!data) throw new Error("Career roadmap not found.");
+  return data;
+}
+
+export async function generateRoadmap(payload: GenerateRoadmapPayload): Promise<CareerRoadmap> {
+  const response = await apiClient.post<ApiResponse<CareerRoadmap>>(
+    AI_ROUTES.roadmapGenerate,
+    payload
+  );
+  const data = response.data.data;
+  if (!data) throw new Error("Failed to generate career roadmap.");
+  return data;
+}
+
+export async function updateRoadmap(
+  roadmapId: string,
+  payload: UpdateRoadmapPayload
+): Promise<CareerRoadmap> {
+  const response = await apiClient.patch<ApiResponse<CareerRoadmap>>(
+    AI_ROUTES.roadmapDetail(roadmapId),
+    payload
+  );
+  const data = response.data.data;
+  if (!data) throw new Error("Failed to update career roadmap.");
+  return data;
+}
+
+export async function deleteRoadmap(roadmapId: string): Promise<void> {
+  await apiClient.delete(AI_ROUTES.roadmapDetail(roadmapId));
+}
+
+export async function createRoadmapPhase(
+  roadmapId: string,
+  payload: CreateRoadmapPhasePayload
+): Promise<RoadmapPhase> {
+  const response = await apiClient.post<ApiResponse<RoadmapPhase>>(
+    AI_ROUTES.roadmapPhases(roadmapId),
+    payload
+  );
+  const data = response.data.data;
+  if (!data) throw new Error("Failed to create roadmap phase.");
+  return data;
+}
+
+export async function updateRoadmapPhase(
+  roadmapId: string,
+  phaseId: string,
+  payload: UpdateRoadmapPhasePayload
+): Promise<RoadmapPhase> {
+  const response = await apiClient.patch<ApiResponse<RoadmapPhase>>(
+    AI_ROUTES.roadmapPhaseDetail(roadmapId, phaseId),
+    payload
+  );
+  const data = response.data.data;
+  if (!data) throw new Error("Failed to update roadmap phase.");
+  return data;
+}
+
+export async function deleteRoadmapPhase(
+  roadmapId: string,
+  phaseId: string
+): Promise<void> {
+  await apiClient.delete(AI_ROUTES.roadmapPhaseDetail(roadmapId, phaseId));
+}
+

@@ -7,7 +7,20 @@ import {
   getJobMatch,
   analyzeJobSkillGap,
   fetchAIHistory,
+  fetchRoadmaps,
+  fetchRoadmapDetail,
+  generateRoadmap,
+  updateRoadmap,
+  deleteRoadmap,
+  createRoadmapPhase,
+  updateRoadmapPhase,
+  deleteRoadmapPhase,
 } from "../services/ai-coach-service";
+import type {
+  CreateRoadmapPhasePayload,
+  UpdateRoadmapPhasePayload,
+  UpdateRoadmapPayload,
+} from "../types";
 
 
 export const AI_COACH_QUERY_KEY = ["ai-coach"];
@@ -78,3 +91,95 @@ export function useAnalyzeJobSkillGap() {
     },
   });
 }
+
+export function useRoadmaps() {
+  return useQuery({
+    queryKey: [...AI_COACH_QUERY_KEY, "roadmaps"],
+    queryFn: fetchRoadmaps,
+  });
+}
+
+export function useRoadmapDetail(roadmapId: string | null) {
+  return useQuery({
+    queryKey: [...AI_COACH_QUERY_KEY, "roadmap", roadmapId],
+    queryFn: () => (roadmapId ? fetchRoadmapDetail(roadmapId) : Promise.reject("No roadmap ID")),
+    enabled: Boolean(roadmapId),
+  });
+}
+
+export function useGenerateRoadmap() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: generateRoadmap,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: AI_COACH_QUERY_KEY });
+    },
+  });
+}
+
+export function useUpdateRoadmap() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ roadmapId, payload }: { roadmapId: string; payload: UpdateRoadmapPayload }) =>
+      updateRoadmap(roadmapId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: AI_COACH_QUERY_KEY });
+    },
+  });
+}
+
+export function useDeleteRoadmap() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (roadmapId: string) => deleteRoadmap(roadmapId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: AI_COACH_QUERY_KEY });
+    },
+  });
+}
+
+export function useCreateRoadmapPhase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      roadmapId,
+      payload,
+    }: {
+      roadmapId: string;
+      payload: CreateRoadmapPhasePayload;
+    }) => createRoadmapPhase(roadmapId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: AI_COACH_QUERY_KEY });
+    },
+  });
+}
+
+export function useUpdateRoadmapPhase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      roadmapId,
+      phaseId,
+      payload,
+    }: {
+      roadmapId: string;
+      phaseId: string;
+      payload: UpdateRoadmapPhasePayload;
+    }) => updateRoadmapPhase(roadmapId, phaseId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: AI_COACH_QUERY_KEY });
+    },
+  });
+}
+
+export function useDeleteRoadmapPhase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ roadmapId, phaseId }: { roadmapId: string; phaseId: string }) =>
+      deleteRoadmapPhase(roadmapId, phaseId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: AI_COACH_QUERY_KEY });
+    },
+  });
+}
+

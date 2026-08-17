@@ -4,26 +4,32 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
-from apps.common.responses import error_response, success_response
+from apps.common.responses import created_response, error_response, success_response
+from apps.jobs.models import SavedJob
+from apps.jobs.roadmap import CareerRoadmapGenerator
+
 
 from ai.parsers import AIResponseParsingError
 from ai.providers.base import AIProviderError
 
-from apps.jobs.models import SavedJob
 from .exceptions import OllamaError
+from .models import CareerRoadmap, RoadmapPhase
 from .serializers import (
     AIChatSerializer,
     AIHistorySerializer,
     CareerAdviceSerializer,
+    CareerRoadmapSerializer,
     CoverLetterRequestSerializer,
     JobMatchResponseSerializer,
     JobMatchSerializer,
     ResumeReviewRequestSerializer,
     ResumeReviewResponseSerializer,
+    RoadmapPhaseSerializer,
     SkillGapJobRequestSerializer,
     SkillGapJobResponseSerializer,
     SkillGapSerializer,
 )
+
 
 from .services import AICoachService
 
@@ -227,3 +233,141 @@ class AIHistoryAPIView(APIView):
             data=self.serializer_class(history, many=True).data,
         )
 
+
+class CareerRoadmapListCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = CareerRoadmapSerializer
+
+    def get(self, request, *args, **kwargs):
+        roadmaps = CareerRoadmap.objects.filter(career_profile__user=request.user)
+        return success_response(
+            message="Career roadmaps retrieved successfully.",
+            data=self.serializer_class(roadmaps, many=True, context={"request": request}).data,
+        )
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        roadmap = serializer.save()
+        return created_response(
+            message="Career roadmap created successfully.",
+            data=self.serializer_class(roadmap, context={"request": request}).data,
+        )
+
+
+class CareerRoadmapDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = CareerRoadmapSerializer
+
+    def get_object(self, user, roadmap_id):
+        try:
+            return CareerRoadmap.objects.get(career_profile__user=user, id=roadmap_id)
+        except (CareerRoadmap.DoesNotExist, ValueError):
+            return None
+
+    def get(self, request, roadmap_id, *args, **kwargs):
+        roadmap = self.get_object(request.user, roadmap_id)
+        if not roadmap:
+            return error_response(message="Career roadmap not found.", status_code=status.HTTP_404_NOT_FOUND)
+        return success_response(
+            message="Career roadmap details retrieved successfully.",
+            data=self.serializer_class(roadmap, context={"request": request}).data,
+        )
+
+    def patch(self, request, roadmap_id, *args, **kwargs):
+        roadmap = self.get_object(request.user, roadmap_id)
+        if not roadmap:
+            return error_response(message="Career roadmap not found.", status_code=status.HTTP_404_NOT_FOUND)
+        serializer = self.serializer_class(roadmap, data=request.data, partial=True, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        updated_roadmap = serializer.save()
+        return success_response(
+            message="Career roadmap updated successfully.",
+            data=self.serializer_class(updated_roadmap, context={"request": request}).data,
+        )
+
+    def delete(self, request, roadmap_id, *args, **kwargs):
+        roadmap = self.get_object(request.user, roadmap_id)
+        if not roadmap:
+            return error_response(message="Career roadmap not found.", status_code=status.HTTP_404_NOT_FOUND)
+        roadmap.delete()
+        return success_response(
+            message="Career roadmap deleted successfully.",
+            status_code=status.HTTP_200_OK,
+        )
+
+
+class RoadmapPhaseListCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = RoadmapPhaseSerializer
+
+    def post(self, request, roadmap_id, *args, **kwargs):
+        try:
+            roadmap = CareerRoadmap.objects.get(career_profile__user=request.user, id=roadmap_id)
+        except (CareerRoadmap.DoesNotExist, ValueError):
+            return error_response(message="Career roadmap not found.", status_code=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.serializer_class(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        phase = serializer.save(roadmap=roadmap)
+        return created_response(
+            message="Roadmap phase created successfully.",
+            data=self.serializer_class(phase, context={"request": request}).data,
+        )
+
+
+class RoadmapPhaseDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = RoadmapPhaseSerializer
+
+    def get_object(self, user, roadmap_id, phase_id):
+        try:
+            return RoadmapPhase.objects.get(
+                roadmap__career_profile__user=user,
+                roadmap_id=roadmap_id,
+                id=phase_id,
+            )
+        except (RoadmapPhase.DoesNotExist, ValueError):
+            return None
+
+    def patch(self, request, roadmap_id, phase_id, *args, **kwargs):
+        phase = self.get_object(request.user, roadmap_id, phase_id)
+        if not phase:
+            return error_response(message="Roadmap phase not found.", status_code=status.HTTP_404_NOT_FOUND)
+        serializer = self.serializer_class(phase, data=request.data, partial=True, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        updated_phase = serializer.save()
+        return success_response(
+            message="Roadmap phase updated successfully.",
+            data=self.serializer_class(updated_phase, context={"request": request}).data,
+        )
+
+    def delete(self, request, roadmap_id, phase_id, *args, **kwargs):
+        phase = self.get_object(request.user, roadmap_id, phase_id)
+        if not phase:
+            return error_response(message="Roadmap phase not found.", status_code=status.HTTP_404_NOT_FOUND)
+        phase.delete()
+        return success_response(
+            message="Roadmap phase deleted successfully.",
+            status_code=status.HTTP_200_OK,
+        )
+
+
+class CareerRoadmapGenerateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = CareerRoadmapSerializer
+
+    def post(self, request, *args, **kwargs):
+        job_id = request.data.get("job_id")
+        if not job_id:
+            return error_response(message="job_id is required.", status_code=status.HTTP_400_BAD_REQUEST)
+
+        generator = CareerRoadmapGenerator()
+        try:
+            roadmap = generator.generate(user=request.user, job_id=str(job_id))
+            return success_response(
+                message="Career roadmap generated successfully.",
+                data=self.serializer_class(roadmap, context={"request": request}).data,
+            )
+        except (SavedJob.DoesNotExist, ValueError):
+            return error_response(message="Saved job not found.", status_code=status.HTTP_404_NOT_FOUND)
