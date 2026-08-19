@@ -70,3 +70,19 @@ class SavedJobAPITestCase(APITestCase):
         response = self.client.delete(f"/api/v1/saved-jobs/{job.id}/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(SavedJob.objects.filter(id=job.id).count(), 0)
+
+    def test_deterministic_job_match_calculation(self):
+        from apps.jobs.skill_gap import calculate_deterministic_job_match
+
+        user_skills = ["Python", "Django", "PostgreSQL"]
+        job_title = "Senior Python Engineer"
+        job_desc = "We need a Python developer with Django, AWS, and Docker skills."
+
+        match_res = calculate_deterministic_job_match(user_skills, job_desc, job_title)
+
+        self.assertIn("Python", match_res["matched_skills"])
+        self.assertIn("Django", match_res["matched_skills"])
+        self.assertIn("AWS", match_res["missing_skills"])
+        self.assertIn("Docker", match_res["missing_skills"])
+        self.assertTrue(0 <= match_res["coverage_percentage"] <= 100)
+        self.assertEqual(match_res["baseline_score"], match_res["coverage_percentage"])

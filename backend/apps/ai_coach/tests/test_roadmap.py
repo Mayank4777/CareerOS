@@ -331,3 +331,75 @@ class CareerRoadmapDomainTestCase(APITestCase):
         self.assertTrue(any("Language" in t or "Foundation" in t for t in [titles[0]]))
         self.assertTrue(any("Cloud" in t or "Preparation" in t for t in [titles[-1], titles[-2]]))
 
+    def test_roadmap_status_auto_synchronization(self) -> None:
+        roadmap = CareerRoadmap.objects.create(
+            career_profile=self.profile1,
+            title="Sync Roadmap",
+            status="not_started",
+        )
+        p1 = RoadmapPhase.objects.create(roadmap=roadmap, title="P1", ordering=1, status="upcoming")
+        p2 = RoadmapPhase.objects.create(roadmap=roadmap, title="P2", ordering=2, status="upcoming")
+
+        # Mark P1 in_progress -> roadmap status becomes in_progress
+        self.client.patch(
+            f"/api/v1/ai/roadmap/{roadmap.id}/phases/{p1.id}/",
+            {"status": "in_progress"},
+            format="json",
+        )
+        roadmap.refresh_from_db()
+        self.assertEqual(roadmap.status, "in_progress")
+
+        # Mark P1 and P2 completed -> roadmap status becomes completed
+        self.client.patch(
+            f"/api/v1/ai/roadmap/{roadmap.id}/phases/{p1.id}/",
+            {"status": "completed"},
+            format="json",
+        )
+        self.client.patch(
+            f"/api/v1/ai/roadmap/{roadmap.id}/phases/{p2.id}/",
+            {"status": "completed"},
+            format="json",
+        )
+        roadmap.refresh_from_db()
+        self.assertEqual(roadmap.status, "completed")
+
+    def test_roadmap_generation_job_without_description(self) -> None:
+        empty_job = SavedJob.objects.create(
+            career_profile=self.profile1,
+            title="Software Developer",
+            description="",
+        )
+        payload = {"job_id": str(empty_job.id)}
+        response = self.client.post("/api/v1/ai/roadmap/generate/", payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(len(response.data["data"]["phases"]) >= 1)
+
+    def test_skill_extraction_aliases_and_contextual_terms(self) -> None:
+        from apps.jobs.skill_gap import extract_job_skills, perform_deterministic_skill_comparison, normalize_skill
+
+        # Test normalize_skill aliases
+        self.assertEqual(normalize_skill("react.js"), "react")
+        self.assertEqual(normalize_skill("postgres"), "postgresql")
+        self.assertEqual(normalize_skill("js"), "javascript")
+        self.assertEqual(normalize_skill("ts"), "typescript")
+        self.assertEqual(normalize_skill("py"), "python")
+        self.assertEqual(normalize_skill("golang"), "go")
+
+        # Test deterministic comparison with aliases
+        user_skills = ["postgres", "reactjs", "nodejs", "py"]
+        req_skills = ["PostgreSQL", "React", "Node.js", "Python", "AWS"]
+        matched, missing = perform_deterministic_skill_comparison(user_skills, req_skills)
+        self.assertIn("PostgreSQL", matched)
+        self.assertIn("React", matched)
+        self.assertIn("Node.js", matched)
+        self.assertIn("Python", matched)
+        self.assertIn("AWS", missing)
+
+        # Test ambiguous terms
+        text_ambiguous_no_match = "Candidate will Go above and beyond in general tasks."
+        skills_no_match = extract_job_skills(text_ambiguous_no_match, "Manager")
+        self.assertNotIn("Go", skills_no_match)
+
+        text_ambiguous_match = "Requires Go programming experience and microservices development."
+        skills_match = extract_job_skills(text_ambiguous_match, "Go Developer")
+        self.assertIn("Go", skills_match)

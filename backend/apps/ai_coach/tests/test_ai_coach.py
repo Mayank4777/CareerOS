@@ -50,28 +50,13 @@ class AICoachAPITestCase(APITestCase):
         profile = CareerProfile.objects.create(user=self.user, first_name="Test", last_name="User")
         job = SavedJob.objects.create(career_profile=profile, title="Backend Lead", company="Stripe", description="Python and AWS")
 
-        ai_payload = {
-            "matched_skills": ["Python"],
-            "missing_skills": [{"skill": "AWS", "importance": "high", "reason": "Cloud infra", "recommendation": "Learn AWS"}],
-            "partial_skills": [],
-        }
-
-        mock_generate.return_value = AIResponse(
-            content=str(ai_payload),
-            provider_name="ollama",
-            model_name="phi3:latest",
-            prompt_tokens=80,
-            completion_tokens=120,
-            total_tokens=200,
-            raw_response={"parsed": ai_payload},
-        )
-
         payload = {
             "job_id": str(job.id),
         }
         response = self.client.post("/api/v1/ai/skill-gap/", payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["data"]["job_id"], str(job.id))
+        mock_generate.assert_not_called()
 
 
     @patch("ai.orchestrator.orchestrator.AIOrchestrator.generate")
@@ -103,6 +88,10 @@ class AICoachAPITestCase(APITestCase):
         job = SavedJob.objects.create(career_profile=profile, title="Fullstack Engineer", company="Stripe")
         resume = Resume.objects.create(career_profile=profile, title="Main Resume")
 
+        from apps.skills.models import Skill
+        Skill.objects.create(career_profile=profile, name="Software Engineering", proficiency_level="intermediate")
+        Skill.objects.create(career_profile=profile, name="Problem Solving", proficiency_level="intermediate")
+
         mock_generate.return_value = AIResponse(
             content='{"match_score": 90, "strengths": ["Fullstack"], "missing_skills": [], "gaps": [], "recommendations": []}',
             provider_name="ollama",
@@ -127,4 +116,4 @@ class AICoachAPITestCase(APITestCase):
         }
         response = self.client.post("/api/v1/ai/job-match/", payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["data"]["match_score"], 90)
+        self.assertEqual(response.data["data"]["match_score"], 100)

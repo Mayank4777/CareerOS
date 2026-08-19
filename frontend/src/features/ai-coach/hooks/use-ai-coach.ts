@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   sendAIChat,
   generateCoverLetter,
-  analyzeSkillGap,
   getCareerAdvice,
   getJobMatch,
   analyzeJobSkillGap,
@@ -46,16 +45,6 @@ export function useGenerateCoverLetter() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: generateCoverLetter,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: AI_COACH_QUERY_KEY });
-    },
-  });
-}
-
-export function useAnalyzeSkillGap() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: analyzeSkillGap,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: AI_COACH_QUERY_KEY });
     },

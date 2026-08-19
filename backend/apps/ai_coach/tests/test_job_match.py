@@ -36,6 +36,11 @@ class JobMatchFeatureTestCase(APITestCase):
             content_data={"summary": "Experienced Python Engineer"},
         )
 
+        from apps.skills.models import Skill
+        Skill.objects.create(career_profile=self.profile1, name="Python", proficiency_level="advanced")
+        Skill.objects.create(career_profile=self.profile1, name="Django", proficiency_level="advanced")
+        Skill.objects.create(career_profile=self.profile1, name="PostgreSQL", proficiency_level="intermediate")
+
         self.user2 = User.objects.create_user(email="user2_jm@example.com", password="Password123!")
         self.profile2 = CareerProfile.objects.create(user=self.user2, first_name="Bob", last_name="Dev")
         self.job2 = SavedJob.objects.create(career_profile=self.profile2, title="Other Job", company="Other Corp")
@@ -71,7 +76,7 @@ class JobMatchFeatureTestCase(APITestCase):
         data = response.data["data"]
         self.assertEqual(data["job_id"], str(self.job1.id))
         self.assertEqual(data["resume_id"], str(self.resume1.id))
-        self.assertEqual(data["match_score"], 88)
+        self.assertEqual(data["match_score"], 75)
         self.assertEqual(data["strengths"], ["Strong Python background"])
         self.assertEqual(data["missing_skills"], ["AWS"])
         self.assertEqual(data["gaps"], ["No Kubernetes"])
@@ -80,7 +85,7 @@ class JobMatchFeatureTestCase(APITestCase):
         # Check database persistence
         self.assertEqual(JobMatchAnalysis.objects.filter(job=self.job1, resume=self.resume1).count(), 1)
         analysis = JobMatchAnalysis.objects.get(job=self.job1)
-        self.assertEqual(analysis.match_score, 88)
+        self.assertEqual(analysis.match_score, 75)
 
     def test_job_match_unauthorized_job(self) -> None:
         payload = {
@@ -131,7 +136,7 @@ class JobMatchFeatureTestCase(APITestCase):
             payload = {"job_id": str(self.job1.id), "resume_id": str(self.resume1.id)}
             response = self.client.post("/api/v1/ai/job-match/", payload, format="json")
             self.assertEqual(response.status_code, status.HTTP_200_OK)
-            self.assertEqual(response.data["data"]["match_score"], valid_score)
+            self.assertEqual(response.data["data"]["match_score"], 75)
 
     @patch("ai.orchestrator.orchestrator.AIOrchestrator.generate")
     def test_job_match_invalid_scores(self, mock_generate: MagicMock) -> None:
@@ -188,3 +193,47 @@ class JobMatchFeatureTestCase(APITestCase):
             response = self.client.post("/api/v1/ai/job-match/", payload, format="json")
             self.assertNotEqual(response.status_code, status.HTTP_200_OK)
             self.assertEqual(JobMatchAnalysis.objects.count(), count_before)
+
+    @patch("ai.orchestrator.orchestrator.AIOrchestrator.generate")
+    def test_deterministic_job_match_score_override(self, mock_generate: MagicMock) -> None:
+        # Candidate has 0 skills, Job requires Python, Django, AWS, Docker
+        mock_generate.return_value = AIResponse(
+            content='{"match_score": 95, "strengths": ["Fabricated strength"], "missing_skills": [], "gaps": [], "recommendations": []}',
+            provider_name="huggingface",
+            model_name="qwen",
+            raw_response={
+                "parsed": {
+                    "match_score": 95,
+                    "strengths": ["Fabricated strength"],
+                    "missing_skills": [],
+                    "gaps": [],
+                    "recommendations": [],
+                }
+            },
+        )
+        payload = {"job_id": str(self.job1.id), "resume_id": str(self.resume1.id)}
+        response = self.client.post("/api/v1/ai/job-match/", payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Deterministic score 75 wins over AI 95
+        self.assertEqual(response.data["data"]["match_score"], 75)
+        # Deterministic missing skills win over AI empty list
+        self.assertIn("AWS", response.data["data"]["missing_skills"])
+
+    def test_reproducible_job_match_score(self) -> None:
+        from apps.jobs.skill_gap import calculate_deterministic_job_match
+
+        res1 = calculate_deterministic_job_match(["Python", "Django"], "Looking for Python, Django, AWS, Docker", "Engineer")
+        res2 = calculate_deterministic_job_match(["Python", "Django"], "Looking for Python, Django, AWS, Docker", "Engineer")
+        self.assertEqual(res1["baseline_score"], res2["baseline_score"])
+        self.assertEqual(res1["baseline_score"], 50)
+
+    def test_job_match_coverage_100_and_0(self) -> None:
+        from apps.jobs.skill_gap import calculate_deterministic_job_match
+
+        full_match = calculate_deterministic_job_match(["Python", "Django"], "Python Django Developer", "Dev")
+        self.assertEqual(full_match["coverage_percentage"], 100)
+        self.assertEqual(full_match["baseline_score"], 100)
+
+        zero_match = calculate_deterministic_job_match([], "Python Django Developer", "Dev")
+        self.assertEqual(zero_match["coverage_percentage"], 0)
+        self.assertEqual(zero_match["baseline_score"], 0)

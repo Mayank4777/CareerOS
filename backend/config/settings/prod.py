@@ -21,10 +21,22 @@ if not ALLOWED_HOSTS:
 
 CORS_ALLOWED_ORIGINS = _list("DJANGO_CORS_ALLOWED_ORIGINS")
 
+if _bool("USE_SQLITE", False):
+    raise ImproperlyConfigured("SQLite is strictly prohibited in production.")
+
+USE_REDIS = _bool("USE_REDIS", True)
+if USE_REDIS:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": os.environ.get("REDIS_URL", "redis://redis:6379/1"),
+        }
+    }
+
 SECURE_SSL_REDIRECT = _bool("DJANGO_SECURE_SSL_REDIRECT", True)
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-SECURE_HSTS_SECONDS = _int("DJANGO_SECURE_HSTS_SECONDS", 0)
+SECURE_HSTS_SECONDS = _int("DJANGO_SECURE_HSTS_SECONDS", 31536000)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = _bool("DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", False)
 SECURE_HSTS_PRELOAD = _bool("DJANGO_SECURE_HSTS_PRELOAD", False)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

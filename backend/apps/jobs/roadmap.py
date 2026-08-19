@@ -204,6 +204,8 @@ class CareerRoadmapGenerator:
                             f"Integrate {s} with target portfolio project codebase",
                         ])
 
+                actions = list(dict.fromkeys(actions))
+
                 phases_to_create.append(
                     RoadmapPhase(
                         roadmap=roadmap,

@@ -9,6 +9,7 @@ class BasePromptBuilder:
     system_prompt: str = (
         "You are CareerOS AI, a world-class career strategist, executive resume architect, and technical interview advisor. "
         "Provide direct, actionable, highly professional, and encouraging responses tailored to the user's career trajectory. "
+        "IMPORTANT GROUNDING RULE: Use ONLY the candidate facts provided in context. Do NOT invent or fabricate unsupported candidate achievements, previous companies, job titles, or skills. "
         "If the user's message is a simple greeting (e.g., 'hi', 'hello', 'hey', 'good morning'), reply warmly and concisely in 1-2 sentences asking how you can assist their career today. "
         "Do NOT generate a lengthy report or detailed plan unless the user explicitly requests one."
     )
@@ -22,7 +23,7 @@ class BasePromptBuilder:
     def _format_context(self, context: dict[str, Any]) -> str:
         if not context:
             return ""
-        lines = ["[Candidate Career Context]"]
+        lines = ["[AUTHORIZED CANDIDATE FACTS]"]
         for key, val in context.items():
             if val:
                 lines.append(f"- {key.replace('_', ' ').title()}: {val}")
@@ -33,6 +34,9 @@ class CareerCoachPrompt(BasePromptBuilder):
     system_prompt = (
         "You are CareerOS AI Career Coach. "
         "Guide the candidate on career progression, skill acquisition, workplace navigation, and job search strategies. "
+        "STRICT BOUNDARY RULE: Ground all responses strictly in the authorized candidate context provided. "
+        "You are an AI advisory assistant and CANNOT execute write operations, change database state, or update user records directly. "
+        "Do NOT claim an action was taken (e.g. 'I updated your resume' or 'Your roadmap is complete') unless confirmed by application status. "
         "If the candidate's input is a simple greeting (e.g., 'hi', 'hello', 'hey'), respond warmly and concisely in 1-2 sentences asking how you can assist their career today. "
         "Do NOT generate a full career plan or lengthy report unless the user explicitly asks for one."
     )
@@ -42,7 +46,7 @@ class ResumeReviewPrompt(BasePromptBuilder):
     system_prompt = (
         "You are an Executive Resume Reviewer & ATS Analyst. "
         "Examine bullet points, formatting, keyword alignment, and quantifiable metrics. "
-        "Highlight strengths, weaknesses, and concrete revisions."
+        "Ground all feedback in the provided resume text. Do NOT invent candidate experience or skills not present in the document."
     )
 
 
@@ -63,14 +67,16 @@ class InterviewPrompt(BasePromptBuilder):
 class CoverLetterPrompt(BasePromptBuilder):
     system_prompt = (
         "You are a Professional Cover Letter Architect. "
-        "Draft compelling, tailored cover letters that highlight candidate achievements and company alignment."
+        "Draft compelling, tailored cover letters that highlight candidate achievements and company alignment. "
+        "GROUNDING RULE: Use ONLY the provided candidate facts and target job context. Do NOT invent unverified experience, companies, degrees, years of experience, or skills."
     )
 
 
 class JobMatchPrompt(BasePromptBuilder):
     system_prompt = (
         "You are a Candidate-Job Fit Evaluator. "
-        "Cross-examine candidate qualifications against target job requirements to produce match ratings, strengths, and gap recommendations."
+        "Cross-examine candidate qualifications against target job requirements to produce match ratings, strengths, and gap recommendations. "
+        "GROUNDING RULE: Reason strictly from the provided candidate skills and job requirements. Do NOT invent missing skills or convert missing skills into matched skills."
     )
 
 

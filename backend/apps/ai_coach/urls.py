@@ -15,7 +15,6 @@ from .views import (
     RoadmapPhaseDetailAPIView,
     RoadmapPhaseListCreateAPIView,
     SkillGapAnalysisAPIView,
-    SkillGapAPIView,
 )
 
 urlpatterns = [

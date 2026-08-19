@@ -7,13 +7,14 @@ from rest_framework.views import APIView
 from apps.common.responses import created_response, error_response, success_response
 from apps.jobs.models import SavedJob
 from apps.jobs.roadmap import CareerRoadmapGenerator
+from apps.resumes.models import Resume
 
 
 from ai.parsers import AIResponseParsingError
 from ai.providers.base import AIProviderError
 
 from .exceptions import OllamaError
-from .models import CareerRoadmap, RoadmapPhase
+from .models import CareerRoadmap, PhaseStatus, RoadmapPhase, RoadmapStatus
 from .serializers import (
     AIChatSerializer,
     AIHistorySerializer,
@@ -27,7 +28,6 @@ from .serializers import (
     RoadmapPhaseSerializer,
     SkillGapJobRequestSerializer,
     SkillGapJobResponseSerializer,
-    SkillGapSerializer,
 )
 
 
@@ -111,37 +111,13 @@ class SkillGapAnalysisAPIView(APIView):
             response_serializer = SkillGapJobResponseSerializer(data=result)
             response_serializer.is_valid(raise_exception=True)
             return success_response(
-                message="Contextual skill gap analysis complete.",
+                message="Deterministic skill gap analysis complete.",
                 data=response_serializer.data,
             )
         except (SavedJob.DoesNotExist, ValueError) as exc:
             return error_response(message="Saved job not found.", status_code=status.HTTP_404_NOT_FOUND)
         except (AIProviderError, OllamaError, AIResponseParsingError) as exc:
             return error_response(message=exc.message, status_code=getattr(exc, "status_code", status.HTTP_502_BAD_GATEWAY))
-
-
-class SkillGapAPIView(APIView):
-
-    permission_classes = [IsAuthenticated]
-    serializer_class = SkillGapSerializer
-    service_class = AICoachService
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        service = self.service_class()
-        try:
-            result = service.analyze_skill_gap(
-                user=request.user,
-                target_role=serializer.validated_data["target_role"],
-                required_skills=serializer.validated_data.get("required_skills", []),
-            )
-            return success_response(
-                message="Skill gap analysis complete.",
-                data=result,
-            )
-        except (AIProviderError, OllamaError) as exc:
-            return error_response(message=exc.message, status_code=exc.status_code)
 
 
 class CareerAdviceAPIView(APIView):
@@ -188,8 +164,8 @@ class JobMatchAPIView(APIView):
                 message="Job match evaluation complete.",
                 data=response_serializer.data,
             )
-        except ValueError as exc:
-            return error_response(message=str(exc), status_code=status.HTTP_404_NOT_FOUND)
+        except (ValueError, SavedJob.DoesNotExist, Resume.DoesNotExist) as exc:
+            return error_response(message=str(exc) if str(exc) else "Resource not found.", status_code=status.HTTP_404_NOT_FOUND)
         except (AIProviderError, OllamaError, AIResponseParsingError) as exc:
             return error_response(message=exc.message, status_code=getattr(exc, "status_code", status.HTTP_502_BAD_GATEWAY))
 
@@ -207,6 +183,7 @@ class ResumeReviewAPIView(APIView):
             result = service.review_resume(
                 user=request.user,
                 resume_id=str(serializer.validated_data["resume_id"]),
+                enhance_with_ai=serializer.validated_data.get("enhance_with_ai", False),
             )
             response_serializer = ResumeReviewResponseSerializer(data=result)
             response_serializer.is_valid(raise_exception=True)
@@ -214,8 +191,8 @@ class ResumeReviewAPIView(APIView):
                 message="Resume review evaluation complete.",
                 data=response_serializer.data,
             )
-        except ValueError as exc:
-            return error_response(message=str(exc), status_code=status.HTTP_404_NOT_FOUND)
+        except (ValueError, Resume.DoesNotExist) as exc:
+            return error_response(message=str(exc) if str(exc) else "Resource not found.", status_code=status.HTTP_404_NOT_FOUND)
         except (AIProviderError, OllamaError, AIResponseParsingError) as exc:
             return error_response(message=exc.message, status_code=getattr(exc, "status_code", status.HTTP_502_BAD_GATEWAY))
 
@@ -330,6 +307,19 @@ class RoadmapPhaseDetailAPIView(APIView):
         except (RoadmapPhase.DoesNotExist, ValueError):
             return None
 
+    def _sync_roadmap_status(self, roadmap: CareerRoadmap) -> None:
+        phases = list(roadmap.phases.all())
+        if not phases:
+            return
+        statuses = [p.status for p in phases]
+        if all(s == PhaseStatus.COMPLETED for s in statuses):
+            roadmap.status = RoadmapStatus.COMPLETED
+        elif any(s in (PhaseStatus.IN_PROGRESS, PhaseStatus.COMPLETED) for s in statuses):
+            roadmap.status = RoadmapStatus.IN_PROGRESS
+        else:
+            roadmap.status = RoadmapStatus.NOT_STARTED
+        roadmap.save()
+
     def patch(self, request, roadmap_id, phase_id, *args, **kwargs):
         phase = self.get_object(request.user, roadmap_id, phase_id)
         if not phase:
@@ -337,6 +327,7 @@ class RoadmapPhaseDetailAPIView(APIView):
         serializer = self.serializer_class(phase, data=request.data, partial=True, context={"request": request})
         serializer.is_valid(raise_exception=True)
         updated_phase = serializer.save()
+        self._sync_roadmap_status(updated_phase.roadmap)
         return success_response(
             message="Roadmap phase updated successfully.",
             data=self.serializer_class(updated_phase, context={"request": request}).data,
@@ -346,7 +337,9 @@ class RoadmapPhaseDetailAPIView(APIView):
         phase = self.get_object(request.user, roadmap_id, phase_id)
         if not phase:
             return error_response(message="Roadmap phase not found.", status_code=status.HTTP_404_NOT_FOUND)
+        roadmap = phase.roadmap
         phase.delete()
+        self._sync_roadmap_status(roadmap)
         return success_response(
             message="Roadmap phase deleted successfully.",
             status_code=status.HTTP_200_OK,

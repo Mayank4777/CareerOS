@@ -64,6 +64,7 @@ export function ResumeReviewPage() {
   const resumes = resumesQuery.data ?? [];
 
   const [selectedResumeId, setSelectedResumeId] = useState<string>("");
+  const [enhanceWithAi, setEnhanceWithAi] = useState(false);
   const [result, setResult] = useState<ResumeReviewResult | null>(null);
 
   const reviewMutation = useReviewResume(selectedResumeId);
@@ -82,9 +83,10 @@ export function ResumeReviewPage() {
     reviewMutation.reset();
   };
 
-  const handleReview = () => {
+  const handleReview = (forceAiEnhance?: boolean) => {
     if (!selectedResumeId || reviewMutation.isPending) return;
-    reviewMutation.mutate(undefined, {
+    const useAi = typeof forceAiEnhance === "boolean" ? forceAiEnhance : enhanceWithAi;
+    reviewMutation.mutate(useAi, {
       onSuccess: (data) => {
         setResult(data);
       },
@@ -174,16 +176,29 @@ export function ResumeReviewPage() {
             </select>
           </div>
 
-          <Button
-            size="md"
-            onClick={handleReview}
-            disabled={!selectedResumeId || reviewMutation.isPending}
-            aria-busy={reviewMutation.isPending}
-            className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 mt-2 sm:mt-5"
-          >
-            <Sparkles className={`w-4 h-4 ${reviewMutation.isPending ? "animate-spin" : ""}`} />
-            {reviewMutation.isPending ? "Reviewing..." : "Review Resume"}
-          </Button>
+          <div className="flex items-center gap-3 self-end sm:self-center mt-2 sm:mt-5">
+            <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium text-muted-foreground hover:text-primary">
+              <input
+                type="checkbox"
+                checked={enhanceWithAi}
+                onChange={(e) => setEnhanceWithAi(e.target.checked)}
+                disabled={reviewMutation.isPending}
+                className="rounded border-border text-brand-500 focus:ring-brand-500 h-4 w-4"
+              />
+              AI Enhancement
+            </label>
+
+            <Button
+              size="md"
+              onClick={() => handleReview()}
+              disabled={!selectedResumeId || reviewMutation.isPending}
+              aria-busy={reviewMutation.isPending}
+              className="shrink-0 flex items-center justify-center gap-2"
+            >
+              <Sparkles className={`w-4 h-4 ${reviewMutation.isPending ? "animate-spin" : ""}`} />
+              {reviewMutation.isPending ? "Reviewing..." : enhanceWithAi ? "AI Review" : "Instant Review"}
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -241,7 +256,7 @@ export function ResumeReviewPage() {
               </div>
 
               <p className="text-[11px] text-muted text-center leading-relaxed border-t border-border/60 pt-3">
-                Note: Score is an AI-powered estimate based on your CareerOS profile and is not an ATS parsing guarantee.
+                Note: Resume Quality Score is calculated deterministically using structural quality signals and profile evidence.
               </p>
             </Card>
 
@@ -274,7 +289,7 @@ export function ResumeReviewPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={handleReview}
+                  onClick={() => handleReview()}
                   className="text-xs flex items-center gap-1 text-brand-400 hover:text-brand-300"
                 >
                   <RotateCcw className="w-3.5 h-3.5" /> Re-evaluate

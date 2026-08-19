@@ -49,8 +49,9 @@ export default {
         borderFocus: "var(--color-border-focus)",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        mono: ["JetBrains Mono", "SFMono-Regular", "monospace"],
+        sans: ["Inter", "'Plus Jakarta Sans'", "-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "Roboto", "sans-serif"],
+        display: ["Outfit", "Inter", "sans-serif"],
+        mono: ["'JetBrains Mono'", "ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"],
       },
       maxWidth: {
         container: "1440px",

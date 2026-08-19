@@ -61,8 +61,8 @@ export async function deleteResume(resumeId: string): Promise<void> {
 import { reviewResume as reviewResumeApi } from "@/features/ai-coach/services/ai-coach-service";
 import type { ResumeReviewResult } from "@/features/ai-coach/types";
 
-export async function reviewResume(resumeId: string): Promise<ResumeReviewResult> {
-  return reviewResumeApi({ resumeId });
+export async function reviewResume(resumeId: string, enhanceWithAi: boolean = false): Promise<ResumeReviewResult> {
+  return reviewResumeApi({ resumeId, enhanceWithAi });
 }
 
 

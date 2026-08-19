@@ -5,8 +5,11 @@ from __future__ import annotations
 from django.contrib import admin
 from django.urls import include, path
 
+from apps.common.views import HealthCheckAPIView
+
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("api/v1/health/", HealthCheckAPIView.as_view(), name="health-check"),
     path("api/v1/auth/", include("apps.accounts.urls")),
     path("api/v1/experience/", include("apps.experience.urls")),
     path("api/v1/resumes/", include("apps.resumes.urls")),

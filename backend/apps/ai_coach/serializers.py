@@ -8,48 +8,6 @@ from apps.jobs.models import SavedJob
 from .models import AIHistory, CareerRoadmap, RoadmapPhase
 
 
-REQUIRED_RESUME_REVIEW_DIMENSIONS = [
-    "completeness",
-    "content_quality",
-    "experience_quality",
-    "projects_achievements",
-    "skills_presentation",
-    "target_role_relevance",
-    "professional_presentation",
-]
-
-RESUME_REVIEW_DIMENSION_WEIGHTS = {
-    "completeness": 0.20,
-    "content_quality": 0.20,
-    "experience_quality": 0.15,
-    "projects_achievements": 0.15,
-    "skills_presentation": 0.10,
-    "target_role_relevance": 0.10,
-    "professional_presentation": 0.10,
-}
-
-RESUME_REVIEW_DIMENSION_POINTS = {
-    "completeness": 20,
-    "content_quality": 20,
-    "experience_quality": 15,
-    "projects_achievements": 15,
-    "skills_presentation": 10,
-    "target_role_relevance": 10,
-    "professional_presentation": 10,
-}
-
-
-def calculate_resume_review_score(dimensions: dict[str, dict[str, Any]]) -> int:
-    """Calculates deterministic 0-100 score from 7 validated 0-10 integer dimensions."""
-    total_points = sum(
-        dimensions[dim]["score"] * points
-        for dim, points in RESUME_REVIEW_DIMENSION_POINTS.items()
-    )
-    score_100 = (total_points + 5) // 10
-    return max(0, min(100, score_100))
-
-
-
 class AIHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = AIHistory
@@ -95,11 +53,6 @@ class CoverLetterRequestSerializer(serializers.Serializer):
 class CareerAdviceSerializer(serializers.Serializer):
     target_role = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
     industry = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
-
-
-class SkillGapSerializer(serializers.Serializer):
-    target_role = serializers.CharField(max_length=255)
-    required_skills = serializers.ListField(child=serializers.CharField(), required=False, default=list)
 
 
 class JobMatchSerializer(serializers.Serializer):
@@ -152,6 +105,8 @@ class JobMatchResponseSerializer(serializers.Serializer):
     match_score = serializers.IntegerField(min_value=0, max_value=100)
     strengths = serializers.ListField(child=serializers.CharField())
     missing_skills = serializers.ListField(child=serializers.CharField())
+    matched_skills = serializers.ListField(child=serializers.CharField(), required=False, default=list)
+    coverage_percentage = serializers.IntegerField(min_value=0, max_value=100, required=False, default=100)
     gaps = serializers.ListField(child=serializers.CharField())
     recommendations = serializers.ListField(child=serializers.CharField())
     analyzed_at = serializers.DateTimeField()
@@ -159,53 +114,15 @@ class JobMatchResponseSerializer(serializers.Serializer):
 
 class ResumeReviewRequestSerializer(serializers.Serializer):
     resume_id = serializers.UUIDField(required=True)
+    enhance_with_ai = serializers.BooleanField(required=False, default=False)
 
 
 class ResumeReviewRawAIResponseSerializer(serializers.Serializer):
-    """Validates raw LLM dimensional review output."""
+    """Validates raw LLM qualitative review output."""
 
-    dimensions = serializers.DictField(required=True)
     strengths = serializers.ListField(child=serializers.CharField(allow_blank=True))
     weaknesses = serializers.ListField(child=serializers.CharField(allow_blank=True))
     recommendations = serializers.ListField(child=serializers.CharField(allow_blank=True))
-
-    def validate_dimensions(self, value: dict[str, Any]) -> dict[str, Any]:
-        raw_val = self.initial_data.get("dimensions")
-        if not isinstance(raw_val, dict):
-            raise serializers.ValidationError("dimensions must be a dictionary.")
-
-        for req_dim in REQUIRED_RESUME_REVIEW_DIMENSIONS:
-            if req_dim not in raw_val:
-                raise serializers.ValidationError(f"Missing required dimension '{req_dim}'.")
-
-            dim_data = raw_val[req_dim]
-            if not isinstance(dim_data, dict):
-                raise serializers.ValidationError(f"Dimension '{req_dim}' must be an object.")
-
-            if "score" not in dim_data:
-                raise serializers.ValidationError(f"Dimension '{req_dim}' is missing 'score'.")
-
-            score = dim_data["score"]
-            if type(score) is not int or isinstance(score, bool):
-                raise serializers.ValidationError(
-                    f"Dimension '{req_dim}' score must be an integer between 0 and 10."
-                )
-
-            if score < 0 or score > 10:
-                raise serializers.ValidationError(
-                    f"Dimension '{req_dim}' score must be an integer between 0 and 10."
-                )
-
-            if "evidence" not in dim_data:
-                raise serializers.ValidationError(f"Dimension '{req_dim}' is missing 'evidence'.")
-
-            evidence = dim_data["evidence"]
-            if not isinstance(evidence, str) or not evidence.strip():
-                raise serializers.ValidationError(
-                    f"Dimension '{req_dim}' evidence must be a non-empty string."
-                )
-
-        return value
 
     def validate_strengths(self, value: list[str]) -> list[str]:
         raw_val = self.initial_data.get("strengths")
@@ -362,6 +279,7 @@ class SkillGapJobResponseSerializer(serializers.Serializer):
     missing_skills = serializers.ListField(child=serializers.DictField())
     partial_skills = serializers.ListField(child=serializers.DictField())
     recommendations = serializers.ListField(child=serializers.CharField())
+    evidence = serializers.DictField(required=False)
     analyzed_at = serializers.DateTimeField()
 
 

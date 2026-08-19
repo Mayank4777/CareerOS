@@ -81,35 +81,6 @@ export async function generateCoverLetter(payload: {
   };
 }
 
-export async function analyzeSkillGap(payload: {
-  targetRole: string;
-  requiredSkills?: string[];
-}): Promise<SkillGapResponse> {
-  const response = await apiClient.post<
-    ApiResponse<{
-      target_role: string;
-      readiness_score: number;
-      matching_skills: string[];
-      missing_skills: string[];
-      recommendations: string[];
-    }>
-  >(AI_ROUTES.skillGap, {
-    target_role: payload.targetRole,
-    required_skills: payload.requiredSkills,
-  });
-
-  const data = response.data.data;
-  if (!data) throw new Error("No data returned");
-
-  return {
-    targetRole: data.target_role,
-    readinessScore: data.readiness_score,
-    matchingSkills: data.matching_skills,
-    missingSkills: data.missing_skills,
-    recommendations: data.recommendations,
-  };
-}
-
 export async function getCareerAdvice(payload: {
   targetRole?: string;
   industry?: string;
@@ -176,11 +147,13 @@ export async function getJobMatch(payload: {
 
 export async function reviewResume(payload: {
   resumeId: string;
+  enhanceWithAi?: boolean;
 }): Promise<ResumeReviewResult> {
   const response = await apiClient.post<ApiResponse<ResumeReviewResult>>(
     AI_ROUTES.resumeReview,
     {
       resume_id: payload.resumeId,
+      enhance_with_ai: payload.enhanceWithAi ?? false,
     }
   );
 

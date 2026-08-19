@@ -133,16 +133,27 @@ class UserContextBuilder:
         }
 
     def build_job_match_context(self, user: Any, job_id: str, resume_id: str) -> dict[str, Any]:
-        """Assemble contextual Job Match evaluation context, strictly isolating user ownership."""
+        """Assemble contextual Job Match evaluation context with deterministic skill-match pre-analysis."""
         job_ctx = self.build_job_context(user=user, job_id=job_id)
         resume_ctx = self.build_resume_context(user=user, resume_id=resume_id)
         user_ctx = self.build_user_context(user=user)
+
+        user_skills = user_ctx.get("skills", [])
+        if not isinstance(user_skills, list):
+            user_skills = []
+
+        from apps.jobs.skill_gap import calculate_deterministic_job_match
+        det_match = calculate_deterministic_job_match(
+            user_skills=user_skills,
+            job_description=job_ctx.get("description", ""),
+            job_title=job_ctx.get("title", ""),
+        )
 
         return {
             "candidate_name": user_ctx.get("candidate_name", ""),
             "headline": user_ctx.get("headline", ""),
             "summary": user_ctx.get("summary", ""),
-            "skills": ", ".join(user_ctx.get("skills", [])) if isinstance(user_ctx.get("skills"), list) else str(user_ctx.get("skills", "")),
+            "skills": ", ".join(user_skills),
             "experiences": "\n".join(user_ctx.get("experiences", [])),
             "projects": "\n".join(user_ctx.get("projects", [])),
             "resume_title": resume_ctx.get("title", ""),
@@ -153,12 +164,30 @@ class UserContextBuilder:
             "location": job_ctx.get("location", ""),
             "salary_range": job_ctx.get("salary_range", ""),
             "job_description": job_ctx.get("description", ""),
+            "deterministic_matched_skills": ", ".join(det_match["matched_skills"]) or "None",
+            "deterministic_missing_skills": ", ".join(det_match["missing_skills"]) or "None",
+            "deterministic_coverage": f"{det_match['coverage_percentage']}%",
+            "deterministic_baseline_score": det_match["baseline_score"],
         }
 
     def build_resume_review_context(self, user: Any, resume_id: str) -> dict[str, Any]:
-        """Assemble contextual Resume Review evaluation context, strictly isolating user ownership."""
+        """Assemble contextual Resume Review evaluation context with deterministic quality signals."""
         resume_ctx = self.build_resume_context(user=user, resume_id=resume_id)
         user_ctx = self.build_user_context(user=user)
+
+        try:
+            from apps.resumes.models import Resume
+            from apps.resumes.quality_signals import evaluate_deterministic_resume_quality_signals
+            resume_obj = Resume.objects.get(career_profile__user=user, id=resume_id)
+            signals = evaluate_deterministic_resume_quality_signals(user=user, resume=resume_obj)
+        except Exception:
+            signals = {
+                "completeness_score": 70,
+                "missing_signals": [],
+                "total_bullets": 0,
+                "metric_bullets_count": 0,
+                "action_verbs_count": 0,
+            }
 
         return {
             "candidate_name": user_ctx.get("candidate_name", ""),
@@ -172,5 +201,12 @@ class UserContextBuilder:
             "resume_target_role": resume_ctx.get("target_role", ""),
             "resume_job_description": resume_ctx.get("job_description", ""),
             "resume_content": str(resume_ctx.get("content_data", "")),
+            "deterministic_completeness_score": signals.get("completeness_score", 70),
+            "deterministic_missing_signals": ", ".join(signals.get("missing_signals", [])) or "None",
+            "deterministic_bullet_metrics": (
+                f"Total bullets: {signals.get('total_bullets', 0)}, "
+                f"Quantifiable metric bullets: {signals.get('metric_bullets_count', 0)}, "
+                f"Action verbs: {signals.get('action_verbs_count', 0)}"
+            ),
         }
 

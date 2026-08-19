@@ -73,7 +73,7 @@ export function useDeleteResume() {
 
 export function useReviewResume(resumeId: string) {
   return useMutation({
-    mutationFn: () => reviewResume(resumeId),
+    mutationFn: (enhanceWithAi?: boolean) => reviewResume(resumeId, enhanceWithAi ?? false),
   });
 }
 

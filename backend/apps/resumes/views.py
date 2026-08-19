@@ -107,19 +107,6 @@ class ResumeDetailAPIView(APIView):
         )
 
 
-class ResumeReviewAPIView(APIView):
-    permission_classes = [IsAuthenticated, IsResumeOwner]
-    service_class = ResumeService
-
-    def post(self, request, resume_id, *args, **kwargs):
-        service = self.service_class()
-        report = service.review_resume(user=request.user, resume_id=resume_id)
-        return success_response(
-            message="AI Resume Review analysis completed.",
-            data=report,
-        )
-
-
 class ResumeApplySuggestionAPIView(APIView):
     permission_classes = [IsAuthenticated, IsResumeOwner]
     serializer_class = ApplySuggestionSerializer

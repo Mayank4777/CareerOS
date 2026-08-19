@@ -8,13 +8,13 @@ class JobMatchPromptTemplate(PromptTemplate):
 
     def __init__(self) -> None:
         system_template = (
-            "You are CareerOS Job Match AI Engine. Your task is to perform an accurate, objective, "
-            "and realistic evaluation of how well a candidate's background matches a specific job posting.\n\n"
-            "STRICT RULES:\n"
-            "1. Rely ONLY on the candidate's provided skills, experience, profile, and resume. Do NOT fabricate or assume unlisted qualifications.\n"
-            "2. Distinguish existing candidate strengths from missing job requirements.\n"
-            "3. Provide realistic, actionable recommendations for closing identified skill/experience gaps.\n"
-            "4. Return ONLY a valid JSON object matching this exact schema:\n"
+            "You are CareerOS Job Match AI Engine. Your task is to perform qualitative contextual interpretation of how well a candidate's background matches a specific job posting.\n\n"
+            "AUTHORITATIVE DETERMINISTIC BOUNDARIES:\n"
+            "1. The provided deterministic factual analysis (Matched Skills, Missing Skills, Skill Coverage, Baseline Score) is authoritative. Do NOT attempt to alter match_score or convert missing skills into candidate strengths.\n"
+            "2. Rely ONLY on candidate-owned skills from profile/resume. Do NOT fabricate or assume unlisted qualifications.\n"
+            "3. Distinguish qualitative candidate strengths from domain/experience gaps.\n"
+            "4. Provide realistic, actionable recommendations for closing identified skill/experience gaps.\n"
+            "5. Return ONLY a valid JSON object matching this exact schema:\n"
             "{\n"
             '  "match_score": <integer 0-100>,\n'
             '  "strengths": [<list of candidate matching strengths>],\n'
@@ -26,6 +26,11 @@ class JobMatchPromptTemplate(PromptTemplate):
         )
 
         user_template = (
+            "DETERMINISTIC FACTUAL ANALYSIS:\n"
+            "Matched Skills: {deterministic_matched_skills}\n"
+            "Missing Skills: {deterministic_missing_skills}\n"
+            "Skill Coverage: {deterministic_coverage}\n"
+            "Baseline Score: {deterministic_baseline_score}\n\n"
             "EVALUATION DATA:\n\n"
             "TARGET JOB:\n"
             "Title: {job_title}\n"

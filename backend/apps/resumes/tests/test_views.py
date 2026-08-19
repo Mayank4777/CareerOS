@@ -193,28 +193,6 @@ class ResumeAPIViewTests(APITestCase):
         self.assertTrue(len(content_data["sections"]) >= 4)
 
 
-    @patch("apps.resumes.review.OllamaClient.generate")
-    def test_review_resume(self, mock_generate) -> None:
-        mock_generate.return_value = {
-            "response": json.dumps([
-                {
-                    "id": "iss-1",
-                    "section": "Experience Section",
-                    "originalText": "Responsible for backend API development.",
-                    "suggestedText": "Engineered REST APIs using Django REST Framework.",
-                    "explanation": "Replace passive phrasing.",
-                    "issueType": "action_verb",
-                }
-            ])
-        }
-        self.authenticate(self.user)
-        url = reverse("resumes:resume-review", kwargs={"resume_id": self.resume.id})
-        response = self.client.post(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("overallScore", response.data["data"])
-        self.assertIn("missingKeywords", response.data["data"])
-
-
     def test_version_snapshot_and_restore(self) -> None:
         self.authenticate(self.user)
         versions_url = reverse("resumes:resume-version-list", kwargs={"resume_id": self.resume.id})

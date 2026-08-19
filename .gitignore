@@ -46,6 +46,8 @@ env/
 backend/logs/
 backend/media/
 backend/staticfiles/
+backend/db.sqlite3
+*.sqlite3
 
 # Tooling
 .codex/
