@@ -1,0 +1,140 @@
+.resume-document-page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 16mm 18mm;
+  background-color: #ffffff;
+  color: #1f2937;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  margin: 0 auto;
+  line-height: 1.45;
+  font-size: 9.5pt;
+  position: relative;
+}
+
+@media print {
+  .resume-document-page {
+    width: 210mm;
+    height: 297mm;
+    box-shadow: none;
+    margin: 0;
+    padding: 15mm;
+  }
+}
+
+.resume-header {
+  border-bottom: 2px solid #3b82f6;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
+
+.resume-name {
+  font-size: 20pt;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #1e3a8a;
+  line-height: 1.1;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.resume-headline {
+  font-size: 11pt;
+  font-weight: 600;
+  color: #2563eb;
+  margin-bottom: 6px;
+}
+
+.resume-contact-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-size: 8.5pt;
+  color: #4b5563;
+}
+
+.resume-contact-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.resume-section {
+  margin-bottom: 14px;
+}
+
+.resume-section-title {
+  font-size: 10pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #1e3a8a;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 3px;
+  margin-bottom: 8px;
+}
+
+.resume-summary-text {
+  font-size: 9pt;
+  color: #374151;
+  text-align: justify;
+}
+
+.resume-item {
+  margin-bottom: 10px;
+}
+
+.resume-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2px;
+}
+
+.resume-item-title {
+  font-size: 9.5pt;
+  font-weight: 700;
+  color: #111827;
+}
+
+.resume-item-company {
+  font-size: 9pt;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.resume-item-dates {
+  font-size: 8.5pt;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.resume-bullets {
+  list-style-type: disc;
+  padding-left: 16px;
+  margin-top: 4px;
+  font-size: 8.8pt;
+  color: #374151;
+}
+
+.resume-bullets li {
+  margin-bottom: 3px;
+}
+
+.resume-skills-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.resume-skill-tag {
+  background-color: #f3f4f6;
+  color: #1f2937;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 8.5pt;
+  font-weight: 600;
+  border: 1px solid #e5e7eb;
+}

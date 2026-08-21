@@ -6,10 +6,7 @@ from typing import Any
 from django.conf import settings
 
 from .base import (
-    AIProviderConnectionError,
-    AIProviderRateLimitError,
-    AIProviderResponseError,
-    AIProviderTimeoutError,
+    AIProviderError,
     AIResponse,
 )
 from .factory import get_provider
@@ -18,14 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 def is_retryable_provider_error(exc: Exception) -> bool:
-    """Determine whether an exception represents a retryable AI provider transport/service failure."""
-    if isinstance(exc, (AIProviderConnectionError, AIProviderTimeoutError, AIProviderRateLimitError)):
+    """Determine whether an exception represents a fallback-eligible AI provider failure."""
+    if isinstance(exc, AIProviderError):
         return True
-    if isinstance(exc, AIProviderResponseError):
-        # HTTP 429 rate limit or 5xx server errors are retryable
-        if exc.status_code == 429 or (500 <= exc.status_code < 600):
-            return True
-        return False
     return False
 
 

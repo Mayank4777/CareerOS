@@ -108,15 +108,41 @@ class AIProviderRouterTests(TestCase):
             self.router.generate("Test prompt")
 
     @patch("ai.providers.router.get_provider")
-    def test_non_retryable_error_aborts_fallback(self, mock_get_provider: MagicMock) -> None:
+    def test_provider_auth_or_response_error_falls_back(self, mock_get_provider: MagicMock) -> None:
         mock_hf = MagicMock()
-        mock_hf.generate.side_effect = AIProviderAuthError("Invalid API Key")
+        mock_hf.generate.side_effect = AIProviderResponseError("400 Bad Request: model_not_supported", status_code=400)
+
+        mock_gemini = MagicMock()
+        mock_gemini.generate.return_value = AIResponse(
+            content="Gemini Fallback Answer",
+            provider_name="gemini",
+            model_name="gemini-3.5-flash",
+        )
+
+        def side_effect(provider_name: str, **kwargs):
+            if provider_name == "huggingface":
+                return mock_hf
+            if provider_name == "gemini":
+                return mock_gemini
+            raise ValueError(f"Unexpected provider {provider_name}")
+
+        mock_get_provider.side_effect = side_effect
+
+        res = self.router.generate("Test prompt")
+
+        self.assertEqual(res.content, "Gemini Fallback Answer")
+        self.assertEqual(res.provider_name, "gemini")
+        self.assertEqual(mock_get_provider.call_count, 2)
+
+    @patch("ai.providers.router.get_provider")
+    def test_non_provider_unexpected_error_aborts_fallback(self, mock_get_provider: MagicMock) -> None:
+        mock_hf = MagicMock()
+        mock_hf.generate.side_effect = RuntimeError("Unexpected system error")
         mock_get_provider.return_value = mock_hf
 
-        with self.assertRaises(AIProviderAuthError):
+        with self.assertRaises(RuntimeError):
             self.router.generate("Test prompt")
 
-        # Fallback should abort immediately without calling Gemini or Ollama
         mock_get_provider.assert_called_once_with(provider_name="huggingface")
 
     @patch("ai.orchestrator.orchestrator.get_provider")
