@@ -1,38 +1,12 @@
-# Auto detect text files
 * text=auto
 
-# Python
-*.py text eol=lf
-
-# Shell
 *.sh text eol=lf
-
-# YAML
+*.py text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.css text eol=lf
+*.json text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
-
-# Docker
-Dockerfile text eol=lf
-*.dockerfile text eol=lf
-
-# Environment
-*.env text eol=lf
-*.example text eol=lf
-
-# Markdown
-*.md text eol=lf
-
-# JSON
-*.json text eol=lf
-
-# TOML
-*.toml text eol=lf
-
-# Ignore binaries
-*.png binary
-*.jpg binary
-*.jpeg binary
-*.gif binary
-*.ico binary
-*.pdf binary
-*.zip binary

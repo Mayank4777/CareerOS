@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 from datetime import timedelta
+from pathlib import Path
 
 from config.env import load_environment
 from config.logging import build_logging_config
@@ -62,8 +62,31 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt",
+    "apps.common.apps.CommonConfig",
     "corsheaders",
     "apps.accounts",
+    "apps.career_profile.apps.CareerProfileConfig",
+    "apps.experience.apps.ExperienceConfig",
+    "apps.skills.apps.SkillsConfig",
+    "apps.projects.apps.ProjectsConfig",
+    "apps.certifications.apps.CertificationsConfig",
+    "apps.resumes.apps.ResumesConfig",
+    "apps.resume_editor.apps.ResumeEditorConfig",
+    "apps.languages.apps.LanguagesConfig",
+    "apps.achievements.apps.AchievementsConfig",
+    "apps.awards.apps.AwardsConfig",
+    "apps.volunteer_experience.apps.VolunteerExperienceConfig",
+    "apps.publications.apps.PublicationsConfig",
+    "apps.interests.apps.InterestsConfig",
+    "apps.references.apps.ReferencesConfig",
+    "apps.custom_sections.apps.CustomSectionsConfig",
+    "apps.jobs.apps.JobsConfig",
+    "apps.applications.apps.ApplicationsConfig",
+    "apps.interviews.apps.InterviewsConfig",
+    "apps.notifications.apps.NotificationsConfig",
+    "apps.ai_coach.apps.AICoachConfig",
+    "apps.user_settings.apps.UserSettingsConfig",
+    "ai.apps.AIConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -112,27 +135,43 @@ TEMPLATES = [
     },
 ]
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("POSTGRES_DB", "career_os"),
-        "USER": os.environ.get("POSTGRES_USER", "career_os"),
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "career_os"),
-        "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
-        "PORT": os.environ.get("POSTGRES_PORT", "5432"),
-        "CONN_MAX_AGE": _int("POSTGRES_CONN_MAX_AGE", 60),
-        "OPTIONS": {
-            "connect_timeout": _int("POSTGRES_CONNECT_TIMEOUT", 10),
-        },
+if _bool("USE_SQLITE", False):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("POSTGRES_DB", "career_os"),
+            "USER": os.environ.get("POSTGRES_USER", "career_os"),
+            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "career_os"),
+            "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
+            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+            "CONN_MAX_AGE": _int("POSTGRES_CONN_MAX_AGE", 60),
+            "OPTIONS": {
+                "connect_timeout": _int("POSTGRES_CONNECT_TIMEOUT", 10),
+            },
+        }
+    }
 
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": os.environ.get("REDIS_URL", "redis://localhost:6379/1"),
+
+if _bool("USE_REDIS", False):
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": os.environ.get("REDIS_URL", "redis://localhost:6379/1"),
+        }
     }
-}
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -141,6 +180,14 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/day",
+        "user": "1000/day",
+    },
     "DEFAULT_PARSER_CLASSES": [
         "rest_framework.parsers.JSONParser",
         "rest_framework.parsers.FormParser",
@@ -149,15 +196,12 @@ REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
     ],
+    "EXCEPTION_HANDLER": "apps.common.handlers.custom_exception_handler",
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(
-        seconds=_int("SIMPLE_JWT_ACCESS_TOKEN_LIFETIME_SECONDS", 300)
-    ),
-    "REFRESH_TOKEN_LIFETIME": timedelta(
-        seconds=_int("SIMPLE_JWT_REFRESH_TOKEN_LIFETIME_SECONDS", 86400)
-    ),
+    "ACCESS_TOKEN_LIFETIME": timedelta(seconds=43200),
+    "REFRESH_TOKEN_LIFETIME": timedelta(seconds=2592000),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
     "UPDATE_LAST_LOGIN": False,
@@ -197,3 +241,22 @@ CELERY_TASK_ALWAYS_EAGER = _bool("CELERY_TASK_ALWAYS_EAGER", False)
 CELERY_TASK_TRACK_STARTED = True
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_TIMEZONE = TIME_ZONE
+
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "phi3:latest")
+OLLAMA_TIMEOUT = int(os.environ.get("OLLAMA_TIMEOUT", "300"))
+
+HF_API_TOKEN = os.environ.get("HF_API_TOKEN", "")
+HF_MODEL = os.environ.get("HF_MODEL", os.environ.get("AI_MODEL", "Qwen/Qwen2.5-7B-Instruct"))
+
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash")
+
+AI_PROVIDER_CHAIN = _list("AI_PROVIDER_CHAIN", "huggingface,gemini,ollama")
+
+_default_ai_provider = "huggingface" if HF_API_TOKEN else "ollama"
+AI_PROVIDER = os.environ.get("AI_PROVIDER", _default_ai_provider).lower()
+
+TEST_RUNNER = "config.test_runner.FastTestRunner"
+
+

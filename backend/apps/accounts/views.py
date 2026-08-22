@@ -3,11 +3,18 @@ from __future__ import annotations
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 
-from .serializers import LoginSerializer, RegisterSerializer, RegisteredUserSerializer
+from apps.common.responses import created_response, error_response, success_response
+
+from .serializers import (
+    LoginSerializer,
+    RefreshTokenSerializer,
+    RegisterSerializer,
+    RegisteredUserSerializer,
+)
 from .services import AuthenticationService, EmailAlreadyExistsError, InvalidCredentialsError
 
 
@@ -18,33 +25,28 @@ class RegisterAPIView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = RegisterSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response(
-                {
-                    "success": False,
-                    "message": "Validation failed.",
-                    "errors": serializer.errors,
-                },
-                status=status.HTTP_400_BAD_REQUEST,
+            return error_response(
+                message="Validation failed.",
+                errors=serializer.errors,
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
             user = serializer.save()
         except EmailAlreadyExistsError:
-            return Response(
-                {
-                    "success": False,
-                    "message": "Email already exists.",
-                },
-                status=status.HTTP_409_CONFLICT,
+            return error_response(
+                message="Email already exists.",
+                status_code=status.HTTP_409_CONFLICT,
             )
 
-        return Response(
-            {
-                "success": True,
-                "message": "User registered successfully.",
-                "data": RegisteredUserSerializer(user).data,
+        refresh = RefreshToken.for_user(user)
+        return created_response(
+            message="User registered successfully.",
+            data={
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": RegisteredUserSerializer(user).data,
             },
-            status=status.HTTP_201_CREATED,
         )
 
 
@@ -55,13 +57,10 @@ class LoginAPIView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = LoginSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response(
-                {
-                    "success": False,
-                    "message": "Validation failed.",
-                    "errors": serializer.errors,
-                },
-                status=status.HTTP_400_BAD_REQUEST,
+            return error_response(
+                message="Validation failed.",
+                errors=serializer.errors,
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
@@ -70,26 +69,49 @@ class LoginAPIView(APIView):
                 password=serializer.validated_data["password"],
             )
         except InvalidCredentialsError:
-            return Response(
-                {
-                    "success": False,
-                    "message": "Invalid email or password.",
-                },
-                status=status.HTTP_401_UNAUTHORIZED,
+            return error_response(
+                message="Invalid email or password.",
+                status_code=status.HTTP_401_UNAUTHORIZED,
             )
 
         refresh = RefreshToken.for_user(user)
-        return Response(
-            {
-                "success": True,
-                "message": "Login successful.",
-                "data": {
-                    "access": str(refresh.access_token),
-                    "refresh": str(refresh),
-                    "user": RegisteredUserSerializer(user).data,
-                },
+        return success_response(
+            message="Login successful.",
+            data={
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": RegisteredUserSerializer(user).data,
             },
-            status=status.HTTP_200_OK,
+        )
+
+
+class RefreshTokenAPIView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes: list = []
+
+    def post(self, request, *args, **kwargs):
+        serializer = RefreshTokenSerializer(data=request.data)
+        if not serializer.is_valid():
+            return error_response(
+                message="Validation failed.",
+                errors=serializer.errors,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            refresh = RefreshToken(serializer.validated_data["refresh"])
+        except TokenError:
+            return error_response(
+                message="Invalid refresh token.",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        return success_response(
+            message="Token refreshed successfully.",
+            data={
+                "access": str(refresh.access_token),
+                "refresh": serializer.validated_data["refresh"],
+            },
         )
 
 
@@ -97,11 +119,7 @@ class MeAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        return Response(
-            {
-                "success": True,
-                "message": "User fetched successfully.",
-                "data": RegisteredUserSerializer(request.user).data,
-            },
-            status=status.HTTP_200_OK,
+        return success_response(
+            message="User fetched successfully.",
+            data=RegisteredUserSerializer(request.user).data,
         )
